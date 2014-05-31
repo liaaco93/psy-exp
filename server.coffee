@@ -50,8 +50,8 @@ queryId = (id) ->
 smtpTransport = nodemailer.createTransport("SMTP",{
 	service: "Gmail",
 	auth: {
-		user: "lc73571n9@gmail.com",
-		pass: "forTESTING"
+		user: "<your-email-here>",
+		pass: "<your-password-here>"
 	}
 })
 mailOptions = {
