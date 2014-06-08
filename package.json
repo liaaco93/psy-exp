@@ -2,12 +2,13 @@
   "name": "dbpilot",
   "description": "db test app",
   "author": "Liam Cooke",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "dependencies": {
-    "express": "4.2.0",
-	"mongoose": "3.8.11",
-	"body-parser": "1.2.0",
-	"nodemailer": "0.6.5"
+    "express": "4.x.x",
+	"mongoose": "3.x.x",
+	"body-parser": "1.x.x",
+	"nodemailer": "0.x.x",
+    "jade": "1.x.x"
   }
 }
