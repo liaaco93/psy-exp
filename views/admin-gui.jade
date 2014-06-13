@@ -1,0 +1,55 @@
+html
+    head
+        title Administration
+        link(href="/semantic/semantic.css" rel="stylesheet" type="text/css")
+        style(type="text/css")
+
+    body
+        .ui.segment
+            .ui.tabular.menu
+                a.item#users Users
+                a.item#experis Experiments
+
+            table.ui.table#userstuff
+                thead
+                    tr
+                        th UID
+                        th E-Mail
+                        th Status
+                    tr: form(method="post" action="/admin/invite")
+                        th: input(type="text" value="uid")#uid
+                        th
+                        th: input(type="submit" value="Invite User")
+                    tr: form(method="post" action="/admin/inviteall")
+                        th
+                        th
+                        th: input(type="submit" value="Invite All")
+                    tr: form(method="post" action="/admin/add")
+                        td: input(type="text" value="uid")#uid
+                        td: input(type="text" value="e-mail")#email
+                        td: input(type="submit" value="Add User")
+                // Caution:
+                    Semantic does not play nice with dynamic html,
+                    consider building from scratch or find a workaround
+                    for now we simply have inviteUser be very rudimentary
+                tbody#userdata
+
+            table.ui.table#experistuff
+                tr
+                    td csdf
+                    td.ui.left.pointing.dropdown csdg
+                        .menu
+                            .item beh
+                            .item reh
+                            .item smeh
+                tr
+                    td.ui.right.pointing.dropdown dsdf
+                        .menu
+                            .item beh
+                            .item reh
+                            .item smeh
+                    td dsdg
+
+        script(src="http://code.jquery.com/jquery-1.11.1.min.js")
+        script(src="/semantic/semantic.js")
+        script(src="/admin.js")

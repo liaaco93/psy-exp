@@ -41,6 +41,21 @@ handleError = (err, res) ->
   console.error(err)
   res.send(500)
 
+
+
+###
+  Show admin page
+###
+showAdminCPanel = (req, res) ->
+  console.log('GET view admin control panel')
+  jade.renderFile('./views/admin-gui.jade', {},
+    (errJade, htmlResult) ->
+      if errJade
+        handleError(errJade, res)
+      else
+        res.send(htmlResult)
+  )
+
 ###
   Returns full table of users
 ###
@@ -105,6 +120,7 @@ addUser = (req, res) ->
         handleError(errQuery, res)
       else if usrQuery
         console.error('addUser: uid or email already exists')
+        res.send(400)
       else
         usr = new User({
           'uid': req.body.uid,
@@ -131,6 +147,7 @@ inviteOne = (req, res) ->
       handleError(errQuery, res)
     if not usrQuery
       console.error('inviteOne: no such user or user already invited')
+      res.send(400)
     else
       jade.renderFile('./views/email-invite.jade',
         {expname: 'Default', rooturl: settings.confSite.rootUrl, uid: usr._id},
@@ -155,6 +172,7 @@ inviteAll = (req, res) ->
       handleError(errQuery, res)
     else if usrQuery.length is 0
       console.error('inviteAll: no uninvited users')
+      res.send(200)
     else
       for usr in usrQuery
         do (usr) ->
@@ -171,6 +189,7 @@ inviteAll = (req, res) ->
           res.send(200)
   )
 
+exports.showAdminCPanel = showAdminCPanel
 exports.showUsers = showUsers
 exports.showUserPage = showUserPage
 exports.submitUserForm = submitUserForm
