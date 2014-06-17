@@ -10,3 +10,5 @@ exports.confMail =
 exports.confSite =
   rootUrl: "http://localhost:3000/"
   dbUrl: "mongodb://localhost/test"
+  adminUser:
+    "admin": "admin"

@@ -43,12 +43,28 @@ handleError = (err, res) ->
 
 
 
+logInAdmin = (req, res) ->
+  console.log('POST admin log in with credentials ' + req.body.user + ' ' + req.body.pass)
+  console.log(req)
+  if req.body.pass is settings.confSite.adminUser[req.body.user]
+    req.session.name = req.body.user
+    res.send(200)
+  else
+    res.send(400)
+
+
 ###
   Show admin page
 ###
 showAdminCPanel = (req, res) ->
   console.log('GET view admin control panel')
-  jade.renderFile('./views/admin-gui.jade', {},
+
+  if req.session.name
+    page = './views/admin-gui.jade'
+  else
+    page = './views/admin-login.jade'
+
+  jade.renderFile(page, {},
     (errJade, htmlResult) ->
       if errJade
         handleError(errJade, res)
@@ -190,6 +206,7 @@ inviteAll = (req, res) ->
   )
 
 exports.showAdminCPanel = showAdminCPanel
+exports.logInAdmin = logInAdmin
 exports.showUsers = showUsers
 exports.showUserPage = showUserPage
 exports.submitUserForm = submitUserForm

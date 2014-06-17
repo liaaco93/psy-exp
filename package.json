@@ -10,6 +10,8 @@
 	"body-parser": "1.x.x",
 	"nodemailer": "0.x.x",
     "jade": "1.x.x",
-    "fs": "0.x.x"
+    "express-session": "1.x.x",
+    "connect-mongo": "0.x.x",
+    "cookie-parser": "1.x.x"
   }
 }
