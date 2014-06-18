@@ -156,11 +156,11 @@ addUser = (req, res) ->
 ###
 inviteOne = (req, res) ->
   console.log('POST invite ' + req.body.uid)
-  usr = User.findOneAndUpdate({'uid': req.body.uid, 'status': 'uninvited'}, {$set: {'status': 'invited'}})
+  usr = User.find({'uid': req.body.uid, 'status': 'uninvited'})
   usr.exec((errQuery, usrQuery) ->
     if errQuery
       handleError(errQuery, res)
-    if not usrQuery
+    else if not usrQuery
       console.error('inviteOne: no such user or user already invited')
       res.send(400)
     else
@@ -170,8 +170,17 @@ inviteOne = (req, res) ->
           if errJade
             handleError(errJade, res)
           else
-            emailer.sendEmail(usr.email, 'Invitation', htmlResult)
-            res.send(200)
+            emailer.sendEmail(usr.email, 'Invitation', htmlResult, (errMail, resMail) ->
+              if errMail
+                handleError(errMail, res)
+              else
+                console.log(resMail)
+                usr.status = 'invited'
+                usr.save((errSave) ->
+                  if errSave
+                    handleError(errSave, res)
+                )
+            )
       )
   )
 
@@ -184,24 +193,44 @@ inviteAll = (req, res) ->
   usrs = User.find({'status': 'uninvited'})
   usrs.exec((errQuery, usrQuery) ->
     if errQuery
-      handleError(errQuery, res)
+      console.error(errQuery)
+      res.send(500)
     else if usrQuery.length is 0
       console.error('inviteAll: no uninvited users')
-      res.send(200)
+      res.send(400)
     else
+      replySent = false
       for usr in usrQuery
-        do (usr) ->
-          jade.renderFile('server/views/email-invite.jade',
-            {expname: 'Default', rooturl: settings.confSite.rootUrl, uid: usr._id},
-            (errJade, htmlResult) ->
-              if errJade
-                handleError(errJade, res)
-              else
-                emailer.sendEmail(usr.email, 'Invitation', htmlResult)
-          )
-          usr.status = 'invited'
-          usr.save()
-          res.send(200)
+        jade.renderFile('server/views/email-invite.jade',
+          {expname: 'Default', rooturl: settings.confSite.rootUrl, uid: usr._id},
+          (errJade, htmlResult) ->
+            if errJade
+              console.error(errJade)
+              if not replySent
+                replySent = true
+                res.send(500)
+            else
+              emailer.sendEmail(usr.email, 'Invitation', htmlResult, (errMail, resMail) ->
+                if errMail
+                  console.error(errMail)
+                  if not replySent
+                    replySent = true
+                    res.send(500)
+                else
+                  console.log(resMail)
+                  usr.status = 'invited'
+                  usr.save((errSave) ->
+                    if errSave
+                      console.error(errSave)
+                      if not replySent
+                        replySent = true
+                        res.send(500)
+                    else if usr is usrQuery[-1..][0]
+                      replySent = true
+                      res.send(200)
+                  )
+              )
+        )
   )
 
 exports.showAdminCPanel = showAdminCPanel

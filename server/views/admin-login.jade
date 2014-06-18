@@ -1,7 +1,10 @@
 html
     head ADMIN LOGIN
     body
-        form(method="post" action="/admin/login")
-            input(type="text" value="user" name="user")#user
-            input(type="text" value="pass" name="pass")#pass
+        form()#login
+            input(type="text" value="user" name="user")
+            input(type="text" value="pass" name="pass")
             input(type="submit" value="login")
+        div#resultLogin
+        script(src="http://code.jquery.com/jquery-1.11.1.min.js")
+        script(src="/static/js/admin-login.js")

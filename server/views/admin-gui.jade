@@ -1,6 +1,5 @@
 html
-    head
-        title Administration
+    head Administration
         link(href="/static/css/semantic.css" rel="stylesheet" type="text/css")
         style(type="text/css")
 
@@ -16,18 +15,21 @@ html
                         th UID
                         th E-Mail
                         th Status
-                    tr: form(method="post" action="/admin/invite")
-                        th: input(type="text" value="uid")#uid
+                    tr: form()#invOne
+                        th: input(type="text" value="uid" name="uid")
                         th
                         th: input(type="submit" value="Invite User")
-                    tr: form(method="post" action="/admin/inviteall")
+                        td#resultInvOne
+                    tr: form()#invAll
                         th
                         th
                         th: input(type="submit" value="Invite All")
-                    tr: form(method="post" action="/admin/add")
-                        td: input(type="text" value="uid")#uid
-                        td: input(type="text" value="e-mail")#email
-                        td: input(type="submit" value="Add User")
+                        td#resultInvAll
+                    tr: form()#addUsr
+                        th: input(type="text" value="uid" name="uid")
+                        th: input(type="text" value="e-mail" name="email")
+                        th: input(type="submit" value="Add User")
+                        td#resultAddUsr
                 // Caution:
                     Semantic does not play nice with dynamic html,
                     consider building from scratch or find a workaround
@@ -52,4 +54,4 @@ html
 
         script(src="http://code.jquery.com/jquery-1.11.1.min.js")
         script(src="/static/js/semantic.js")
-        script(src="/static/js/admin.js")
+        script(src="/static/js/admin-gui.js")
