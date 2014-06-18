@@ -1,13 +1,12 @@
 ###
 	Node.js code for a simple server attached to a database.
-	Has a console-based API that supports adding users and sending e-mails to
-		'uninvited' users
 	Much code was borrowed from:
-		Mongoose and Express tutorials
-		nodemailer quickstart
+		Mongoose and Express (and Express middleware) tutorials
 		http://pixelhandler.com/posts/develop-a-restful-api-using-nodejs-with-express-and-mongoose
 			(site redirects you somewhere else if you are using Firefox)
-	Most errors send back 500 and do nothing
+
+	Warning: All paths in require use the file's current directory,
+    BUT all paths not in a require call use the root directory
 ###
 
 ###
@@ -15,7 +14,6 @@
     -Fix client-side requests to use AJAX (all .jade files)
     -Fix client-side invite and add requests; I messed up referencing the data (requestHandlers.coffee)
       --Change from req.param.<etc> to req.body.<etc> OR req.query.<etc> depending on if POST or GET respectively
-    -Refactor serving of static content
   TODO: Medium Priority
     -Figure out how secure login is and how to make more secure
     -Clean up and prettify .jade pages, implement reusable templates for sidebars, headers, etc
@@ -28,21 +26,23 @@
 ###
 
 express = require('express')
-bodyparser = require('body-parser')
+serveStatic = require('serve-static')
+bodyParser = require('body-parser')
 cookieParser = require('cookie-parser')
 session = require('express-session')
 #mongoStore = require()
 fs = require('fs')
 reqHand = require('./requestHandlers')
 
-#express and bodyparser setup
+#express setup
 app = express()
-app.use(bodyparser())
-app.use(cookieParser())
+app.use(bodyParser()) #interpreting JSON and HTML
+app.use(cookieParser()) #sessions for login
 app.use(session({
   name: 'app.sess'
   secret: '45df9#jk1'
 }))
+app.use('/static', serveStatic('./client')) #serving static content
 
 ###
   Main routes requiring serverside processing before sending to client
@@ -56,24 +56,5 @@ app.get('/admin/viewUsers', reqHand.showUsers)
 app.post('/admin/add', reqHand.addUser)
 app.post('/admin/invite', reqHand.inviteOne)
 app.post('/admin/inviteall', reqHand.inviteAll)
-
-###
-  These are resource requests for js, css, or simple html files; they're small enough to be left in server.coffee
-  But if we do need to do something with these requests first, then the function should be added to requestHandlers
-###
-# A handy function to get the resource, briefly check for errors in getting it, and spit it out to the client
-giveResource = (loc) ->
-  return (req, res) ->
-    fs.readFile(loc, (err, data) ->
-      if err
-        console.error(err)
-        res.send(500)
-      else
-        res.send(data)
-    )
-
-app.get('/semantic/semantic.css', giveResource('views/semanticui/css/semantic.min.css'))
-app.get('/semantic/semantic.js', giveResource('views/semanticui/javascript/semantic.min.js'))
-app.get('/admin.js', giveResource('views/admin-gui.js'))
 
 app.listen(3000)

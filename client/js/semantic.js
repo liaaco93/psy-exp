@@ -1019,7 +1019,7 @@ $.extend( $.easing, {
       error            : 'There was an error with your request',
       parseError       : 'There was an error parsing your request',
       JSONParse        : 'JSON could not be parsed during error handling',
-      statusMessage    : 'Server gave an error: ',
+      statusMessage    : 'server gave an error: ',
       beforeSend       : 'The before send function has aborted the request',
       exitConditions   : 'API Request Aborted. Exit conditions met'
     },
@@ -1621,7 +1621,7 @@ $.fn.form = function(fields, parameters) {
                   $prompt.transition(settings.transition + ' in', settings.duration);
                 }
                 else {
-                  module.verbose('Displaying error with fallback javascript animation');
+                  module.verbose('Displaying error with fallback js animation');
                   $prompt
                     .fadeIn(settings.duration)
                   ;
@@ -4091,7 +4091,7 @@ $.fn.dimmer = function(parameters) {
               ;
             }
             else {
-              module.verbose('Showing dimmer animation with javascript');
+              module.verbose('Showing dimmer animation with js');
               $dimmer
                 .stop()
                 .css({
@@ -4128,7 +4128,7 @@ $.fn.dimmer = function(parameters) {
               ;
             }
             else {
-              module.verbose('Hiding dimmer with javascript');
+              module.verbose('Hiding dimmer with js');
               $dimmer
                 .stop()
                 .fadeOut(module.get.duration(), function() {
@@ -5814,7 +5814,7 @@ $.fn.modal = function(parameters) {
               ;
             }
             else {
-              module.debug('Showing modal with javascript');
+              module.debug('Showing modal with js');
               $module
                 .fadeIn(settings.duration, settings.easing, transitionCallback)
               ;
@@ -5895,7 +5895,7 @@ $.fn.modal = function(parameters) {
             ;
           }
           else {
-            module.debug('Hiding modal with javascript');
+            module.debug('Hiding modal with js');
             $module
               .fadeOut(settings.duration, settings.easing, transitionCallback)
             ;
@@ -6383,7 +6383,7 @@ $.fn.nag = function(parameters) {
           $close
             .on('click' + eventNamespace, module.dismiss)
           ;
-          // lets avoid javascript if we dont need to reposition
+          // lets avoid js if we dont need to reposition
           if(settings.context == window && settings.position == 'fixed') {
             $module
               .addClass(className.fixed)
@@ -9856,7 +9856,7 @@ $.fn.sidebar = function(parameters) {
             module.remove.bodyCSS();
           }
           else {
-            module.debug('Resetting body position using javascript');
+            module.debug('Resetting body position using js');
             module.animatePage(direction, 0);
           }
           module.remove.pushed();
@@ -9867,7 +9867,7 @@ $.fn.sidebar = function(parameters) {
             animateSettings = {}
           ;
           animateSettings['padding-' + direction] = distance;
-          module.debug('Using javascript to animate body', animateSettings);
+          module.debug('Using js to animate body', animateSettings);
           $body
             .animate(animateSettings, settings.duration, module.set.pushed)
           ;

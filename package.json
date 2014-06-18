@@ -5,13 +5,14 @@
   "version": "0.0.3",
   "private": true,
   "dependencies": {
-    "express": "4.x.x",
-	"mongoose": "3.x.x",
-	"body-parser": "1.x.x",
-	"nodemailer": "0.x.x",
-    "jade": "1.x.x",
-    "express-session": "1.x.x",
-    "connect-mongo": "0.x.x",
-    "cookie-parser": "1.x.x"
+      "express": "4.x.x",
+      "body-parser": "1.x.x",
+      "cookie-parser": "1.x.x",
+      "express-session": "1.x.x",
+      "connect-mongo": "0.x.x",
+      "serve-static": "1.x.x",
+      "mongoose": "3.x.x",
+      "nodemailer": "0.x.x",
+      "jade": "1.x.x"
   }
 }

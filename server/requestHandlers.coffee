@@ -45,7 +45,6 @@ handleError = (err, res) ->
 
 logInAdmin = (req, res) ->
   console.log('POST admin log in with credentials ' + req.body.user + ' ' + req.body.pass)
-  console.log(req)
   if req.body.pass is settings.confSite.adminUser[req.body.user]
     req.session.name = req.body.user
     res.send(200)
@@ -60,9 +59,9 @@ showAdminCPanel = (req, res) ->
   console.log('GET view admin control panel')
 
   if req.session.name
-    page = './views/admin-gui.jade'
+    page = 'server/views/admin-gui.jade'
   else
-    page = './views/admin-login.jade'
+    page = 'server/views/admin-login.jade'
 
   jade.renderFile(page, {},
     (errJade, htmlResult) ->
@@ -97,7 +96,7 @@ showUserPage = (req, res) ->
       console.error('showUserPage: _id not found')
       res.send(404)
     else
-      jade.renderFile('./views/user-submit.jade',
+      jade.renderFile('server/views/user-submit.jade',
         {uid: usrQuery.uid, status: usrQuery.status},
         (errJade, htmlResult) ->
           if errJade
@@ -165,7 +164,7 @@ inviteOne = (req, res) ->
       console.error('inviteOne: no such user or user already invited')
       res.send(400)
     else
-      jade.renderFile('./views/email-invite.jade',
+      jade.renderFile('server/views/email-invite.jade',
         {expname: 'Default', rooturl: settings.confSite.rootUrl, uid: usr._id},
         (errJade, htmlResult) ->
           if errJade
@@ -192,7 +191,7 @@ inviteAll = (req, res) ->
     else
       for usr in usrQuery
         do (usr) ->
-          jade.renderFile('./views/email-invite.jade',
+          jade.renderFile('server/views/email-invite.jade',
             {expname: 'Default', rooturl: settings.confSite.rootUrl, uid: usr._id},
             (errJade, htmlResult) ->
               if errJade
