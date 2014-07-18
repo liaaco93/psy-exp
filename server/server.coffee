@@ -5,24 +5,19 @@
 		http://pixelhandler.com/posts/develop-a-restful-api-using-nodejs-with-express-and-mongoose
 			(site redirects you somewhere else if you are using Firefox)
 
-	Warning: All paths in require use the file's current directory,
+	Note: All paths in require use the file's current directory,
     BUT all paths not in a require call use the root directory
 ###
 
 ###
-  TODO: High Priority
-    -Fix client-side requests to use AJAX (all .jade files)
-    -Fix client-side invite and add requests; I messed up referencing the data (requestHandlers.coffee)
-      --Change from req.param.<etc> to req.body.<etc> OR req.query.<etc> depending on if POST or GET respectively
-  TODO: Medium Priority
-    -Figure out how secure login is and how to make more secure
-    -Clean up and prettify .jade pages, implement reusable templates for sidebars, headers, etc
-    -???
-  TODO: Low Priority / Optional
-    -Set up user pages to view available experiments, change settings etc?
-    -Design .jade pages from ground up to be more functional
-    -Set up hub page so it's easier to get around (so can move easily between main page and admin,
-      or userpage and experiment page)
+  TODO list:
+    server.coffee
+      make sessions more secure (using mongostore, maybe, just not the default)
+    requestHandlers.coffee
+      dynamic admin page updates (inform user of errors as they occur, update db view as db changes)
+    admin-gui.jade
+      fix problem with the dropdown menu and dynamic html by showing fixed number of users per "page"
+        so the table is static, but its contents are dynamic
 ###
 
 express = require('express')
@@ -34,7 +29,7 @@ session = require('express-session')
 fs = require('fs')
 reqHand = require('./requestHandlers')
 
-#express setup
+#express setup TODO: Make sessions more secure
 app = express()
 app.use(bodyParser()) #interpreting JSON and HTML
 app.use(cookieParser()) #sessions for login
@@ -50,6 +45,14 @@ app.use('/static', serveStatic('./client')) #serving static content
 app.route('/submit/:id')
   .get(reqHand.showUserPage)
   .post(reqHand.submitUserForm)
+app.route('/user/login')
+  .get(reqHand.showUserLogin)
+  .post(reqHand.logInUser)
+### TODO: figure out how users will be created first
+app.route('/user/new')
+  .get(reqHand.showNewUser)
+  .post(reqHand.makeNewUser)
+###
 app.get('/admin', reqHand.showAdminCPanel)
 app.post('/admin/login', reqHand.logInAdmin)
 app.get('/admin/viewusers', reqHand.showUsers)

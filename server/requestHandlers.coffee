@@ -5,6 +5,7 @@
 ###
 mongoose = require('mongoose')
 jade = require('jade')
+crypto = require('crypto')
 emailer = require('./modules/emailer')
 settings = require('./config')
 
@@ -27,7 +28,8 @@ db.once('open', callback = ()->)
 userSchema = mongoose.Schema({
   uid: Number,
   email: String,
-  status: String
+  status: String,
+  hashedPassword: String
 })
 User = mongoose.model('users', userSchema);
 
@@ -41,8 +43,84 @@ handleError = (err, res) ->
   console.error(err)
   res.send(500)
 
+###
+  Start of User functions
+###
+showUserLogin = (req, res) ->
+  console.log('GET user login page')
+  jade.renderFile('server/views/user-login.jade', {},
+    (errJade, htmlResult) ->
+      if errJade
+        handleError(errJade, res)
+      else
+        res.send(htmlResult)
+  )
+
+###
+  Logs in user
+###
+logInUser = (req, res) ->
+  console.log('POST attempting to log in ' + req.params.uid)
+  hashedPass = crypto.createHash('sha512')
+  hashedPass.update(req.params.pass, 'ascii')
+  #TODO: implement accepted crypto practices: iterate over hash min 1000 times, use random salt to protect db
+  User.findOne({uid: req.params.uid, hashedPassword: hashedPass.digest('hex')},
+    (errQuery, usrQuery) ->
+      if errQuery
+        handleError(errQuery, res)
+      else if not usrQuery
+        console.error('logInUser: invalid uid or pass')
+        res.send(400)
+      else
+        #TODO: actually implement changing the session to reflect user login
+        res.send(200)
+  )
+
+###
+	Serves user's experiment page, showing user uid and status
+###
+showUserPage = (req, res) ->
+  console.log('GET request from ' + req.params.id)
+  usr = User.findById(queryId(req.params.id))
+  usr.exec((errQuery, usrQuery) ->
+    if errQuery
+      handleError(errQuery, res)
+    else if not usrQuery
+      console.error('showUserPage: _id not found')
+      res.send(404)
+    else
+      jade.renderFile('server/views/user-submit.jade',
+        {uid: usrQuery.uid, status: usrQuery.status},
+      (errJade, htmlResult) ->
+        if errJade
+          handleError(errJade, res)
+        else
+          res.send(htmlResult)
+      )
+  )
+
+###
+  Updates user status
+###
+submitUserForm = (req, res) ->
+  console.log('POST request from ' + req.params.id)
+  User.findByIdAndUpdate(queryId(req.params.id),
+    {'$set': {'status': 'completed'}},
+  (errQuery, usrQuery) ->
+    if errQuery
+      handleError(errQuery, res)
+    else if not usrQuery
+      console.error('submitUserForm: _id not found')
+      res.send(404)
+    else
+      console.log('uid: ' + usrQuery.uid + '| status: ' + usrQuery.status)
+      res.send(200)
+  )
 
 
+###
+  Start of Admin functions
+###
 logInAdmin = (req, res) ->
   console.log('POST admin log in with credentials ' + req.body.user + ' ' + req.body.pass)
   if req.body.pass is settings.confSite.adminUser[req.body.user]
@@ -50,7 +128,6 @@ logInAdmin = (req, res) ->
     res.send(200)
   else
     res.send(400)
-
 
 ###
   Show admin page
@@ -81,47 +158,6 @@ showUsers = (req, res) ->
       handleError(errQuery, res)
     else
       res.send(doc)
-  )
-
-###
-	Serves user page, showing user uid and status
-###
-showUserPage = (req, res) ->
-  console.log('GET request from ' + req.params.id)
-  usr = User.findById(queryId(req.params.id))
-  usr.exec((errQuery, usrQuery) ->
-    if errQuery
-      handleError(errQuery, res)
-    else if not usrQuery
-      console.error('showUserPage: _id not found')
-      res.send(404)
-    else
-      jade.renderFile('server/views/user-submit.jade',
-        {uid: usrQuery.uid, status: usrQuery.status},
-        (errJade, htmlResult) ->
-          if errJade
-            handleError(errJade, res)
-          else
-            res.send(htmlResult)
-      )
-  )
-
-###
-  Updates user status
-###
-submitUserForm = (req, res) ->
-  console.log('POST request from ' + req.params.id)
-  User.findByIdAndUpdate(queryId(req.params.id),
-    {'$set': {'status': 'completed'}},
-    (errQuery, usrQuery) ->
-      if errQuery
-        handleError(errQuery, res)
-      else if not usrQuery
-        console.error('submitUserForm: _id not found')
-        res.send(404)
-      else
-        console.log('uid: ' + usrQuery.uid + '| status: ' + usrQuery.status)
-        res.send(200)
   )
 
 ###
@@ -233,11 +269,15 @@ inviteAll = (req, res) ->
         )
   )
 
+#User stuff
+exports.showUserLogin = showUserLogin
+exports.logInUser = logInUser
+exports.showUserPage = showUserPage
+exports.submitUserForm = submitUserForm
+#Admin stuff
 exports.showAdminCPanel = showAdminCPanel
 exports.logInAdmin = logInAdmin
 exports.showUsers = showUsers
-exports.showUserPage = showUserPage
-exports.submitUserForm = submitUserForm
 exports.addUser = addUser
 exports.inviteOne = inviteOne
 exports.inviteAll = inviteAll
