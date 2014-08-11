@@ -1,0 +1,25 @@
+<component name="libraryTable">
+  <library name="Generated files" type="javaScript">
+    <properties>
+      <sourceFilesUrls>
+        <item url="file://$PROJECT_DIR$/server/server.js" />
+        <item url="file://$PROJECT_DIR$/server/modules/emailer.js" />
+        <item url="file://$PROJECT_DIR$/server/requestHandlers.js" />
+        <item url="file://$PROJECT_DIR$/node_modules/express/node_modules/proxy-addr/node_modules/ipaddr.js/test/ipaddr.test.js" />
+        <item url="file://$PROJECT_DIR$/server/config.js" />
+        <item url="file://$PROJECT_DIR$/node_modules/express/node_modules/proxy-addr/node_modules/ipaddr.js/src/ipaddr.js" />
+      </sourceFilesUrls>
+    </properties>
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/resourceReqHandlers.js" />
+      <root url="file://$PROJECT_DIR$/server/server.js" />
+      <root url="file://$PROJECT_DIR$/server/modules/emailer.js" />
+      <root url="file://$PROJECT_DIR$/server/requestHandlers.js" />
+      <root url="file://$PROJECT_DIR$/client/js/admin-gui.js" />
+      <root url="file://$PROJECT_DIR$/node_modules/express/node_modules/proxy-addr/node_modules/ipaddr.js/test/ipaddr.test.js" />
+      <root url="file://$PROJECT_DIR$/server/config.js" />
+      <root url="file://$PROJECT_DIR$/node_modules/express/node_modules/proxy-addr/node_modules/ipaddr.js/src/ipaddr.js" />
+    </CLASSES>
+    <SOURCES />
+  </library>
+</component>
