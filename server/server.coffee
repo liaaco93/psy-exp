@@ -37,7 +37,7 @@ app.use(session({
   name: 'app.sess'
   secret: '45df9#jk1'
 }))
-app.use('/static', serveStatic('./client')) #serving static content
+app.use('/static', serveStatic('./client')) #serving static content (includes html, css, js, css, images, fonts)
 
 ###
   Main routes requiring serverside processing before sending to client
@@ -53,9 +53,13 @@ app.route('/user/new')
   .get(reqHand.showNewUser)
   .post(reqHand.makeNewUser)
 ###
+app.get('/', (req,res)->res.send(200))
 app.get('/admin', reqHand.showAdminCPanel)
 app.post('/admin/login', reqHand.logInAdmin)
-app.get('/admin/viewusers', reqHand.showUsers)
+app.get('/admin/viewexps', reqHand.showExperiments)
+app.post('/admin/newexp', reqHand.createExperiment)
+app.get('/admin/view/:eid', reqHand.expUsersTemplate)
+app.get('/admin/viewusers/:eid', reqHand.showExpUsers)
 app.post('/admin/adduser', reqHand.addUser)
 app.post('/admin/invite', reqHand.inviteOne)
 app.post('/admin/inviteall', reqHand.inviteAll)

@@ -1,50 +1,20 @@
-$(()->
-  $('#experiments').trigger('click')
-)
-
-$('#tabMenu').on('click', '.item', () ->
-  $('#tabMenu').children('.item').removeClass('active')
-  $(this).addClass('active')
-  $("#tabContents").attr("src",
-    if $(this).attr('id') is 'experiments'
-      '/static/html/admin-gui-exptable.html'
-    else
-      "/admin/view/#{$(this).attr('eid')}"
-  )
-)
-
-###
-
 loadUsers = () ->
-  $.get('/admin/viewusers', (data, txtStatus, jqXHR) ->
-    $('#userdata').empty()
-    for user in data
-      $('#userdata').append(
+  $.get("/admin/viewusers/#{$('#userTable').attr("eid")}", (data, txtStatus, jqXHR) ->
+    $('#userData').children().detach()
+    console.log(data)
+    for user in data.users
+      $('#userData').append(
         '<tr>\
           <td>'+user.uid+'</td>\
           <td>'+user.email+'</td>\
           <td class="ui left pointing dropdown">'+user.status+'<div class="menu"><div class="item">asdf</div></div></td>\
         </tr>'
       )
+    $('.ui.dropdown').dropdown()
   )
 
-$(Document).ready(()->
-  $('.ui.table').hide()
+$(() ->
   loadUsers()
-  $('#userstuff').show()
-)
-
-$('.ui.dropdown').dropdown()
-
-$('#users').click(()->
-  $('.ui.table').hide()
-  loadUsers()
-  $('#userstuff').show()
-)
-
-$('#experis').click(()->
-  $('.ui.table').hide()
-  $('#experistuff').show()
 )
 
 $('#invOne').submit(() ->
@@ -84,6 +54,7 @@ $('#invAll').submit(() ->
 $('#addUsr').submit(() ->
   $.post('/admin/adduser',
     {
+      eid: $('#userTable').attr("eid")
       uid: this.uid.value
       email: this.email.value
     }
@@ -93,12 +64,11 @@ $('#addUsr').submit(() ->
     loadUsers()
   )
   .fail((data) ->
-    if data.status is 400
+    console.log(data.status)
+    ###if data.status is 400
       $('#resultAddUsr').html("UID or e-mail already exists")
     else if data.status is 500
-      $('#resultAddUsr').html("Something went wrong")
+      $('#resultAddUsr').html("Something went wrong")###
   )
   false
 )
-
-###

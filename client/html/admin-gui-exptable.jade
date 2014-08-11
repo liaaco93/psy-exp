@@ -1,0 +1,29 @@
+html
+    head
+        link(href="/static/css/semantic.css" rel="stylesheet" type="text/css")
+        style(type="text/css")
+    body
+        //table is invisible if iframe.width < 785px
+        table.ui.table.segment#experimentTable
+            thead
+                tr
+                    th Name
+                    th Private?
+                    th Anonymous?
+                    th Link Lifetime
+                    th Start
+                    th End
+                    th
+                tr: form#newExp
+                    th: input(type="text" name="name")
+                    th: input(type="checkbox" name="private")
+                    th: input(type="checkbox" name="anonymous")
+                    th: input(type="text" name="timeLimit" value="dd:hh:mm:ss")
+                    th: input(type="text" name="start" value="mm/dd/yyyy hh:mm:ss")
+                    th: input(type="text" name="end" value="mm/dd/yyyy hh:mm:ss")
+                    th: input(type="submit" value="Add Experiment")
+            tbody#experimentData
+
+        script(src="http://code.jquery.com/jquery-1.11.1.min.js")
+        script(src="/static/js/semantic.js")
+        script(src="/static/js/admin-gui-exptable.js")
