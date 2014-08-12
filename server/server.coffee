@@ -64,4 +64,4 @@ app.post('/admin/adduser', reqHand.addUser)
 app.post('/admin/invite', reqHand.inviteOne)
 app.post('/admin/inviteall', reqHand.inviteAll)
 
-app.listen(3000)
+app.listen(process.env.PORT || 5000)

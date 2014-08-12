@@ -91,7 +91,7 @@
 
   app.post('/admin/inviteall', reqHand.inviteAll);
 
-  app.listen(3000);
+  app.listen(process.env.PORT || 5000);
 
 }).call(this);
 
