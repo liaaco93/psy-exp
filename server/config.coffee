@@ -9,6 +9,6 @@ exports.confMail =
 
 exports.confSite =
   rootUrl: "http://localhost:3000/"
-  dbUrl: "mongodb://localhost/test"
+  dbUrl: "mongodb://admin:admin@ds031087.mongolab.com:31087/heroku_app28365881"
   adminUser:
     "admin": "admin"
