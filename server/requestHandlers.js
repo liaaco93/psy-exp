@@ -7,81 +7,48 @@
  */
 
 (function() {
-  var User, addUser, callback, db, emailer, handleError, inviteAll, inviteOne, jade, logInAdmin, mongoose, queryId, settings, showAdminCPanel, showUserPage, showUsers, submitUserForm, userSchema;
+  var Experiment, User, addUser, createExperiment, crypto, dbSchemata, emailer, expUsersTemplate, handleError, inviteAll, inviteOne, jade, logInAdmin, logInUser, mongoose, settings, showAdminCPanel, showExpUsers, showExperiments, showUserLogin, showUserPage, submitUserForm, _;
 
   mongoose = require('mongoose');
 
   jade = require('jade');
 
+  crypto = require('crypto');
+
+  _ = require('underscore');
+
   emailer = require('./modules/emailer');
+
+  dbSchemata = require('./modules/dbSetup');
 
   settings = require('./config');
 
-  mongoose.connect(settings.confSite.dbUrl);
+  User = mongoose.model('users', dbSchemata.UserSchema);
 
-  db = mongoose.connection;
-
-  db.on('error', console.error.bind(console, 'connection error:'));
-
-  db.once('open', callback = function() {});
-
-
-  /*
-  	Schema/model for users:
-  	uid: should be unique, but we can use ObjectID
-  		from the DB as a unique identifier; no checking
-  		of uniqueness currently in uid
-  	email: again, should be unique, we don't want multiple
-  		users all with the same email; again, no checking of
-  		uniqueness yet
-  	status: one of 'uninvited', 'invited', or 'completed'
-   */
-
-  userSchema = mongoose.Schema({
-    uid: Number,
-    email: String,
-    status: String
-  });
-
-  User = mongoose.model('users', userSchema);
-
-  queryId = function(id) {
-    var objectId;
-    objectId = mongoose.Types.ObjectId(id);
-    return {
-      '_id': objectId
-    };
-  };
+  Experiment = mongoose.model('experiments', dbSchemata.ExperimentSchema);
 
   handleError = function(err, res) {
     console.error(err);
     return res.send(500);
   };
 
-  logInAdmin = function(req, res) {
-    console.log('POST admin log in with credentials ' + req.body.user + ' ' + req.body.pass);
-    if (req.body.pass === settings.confSite.adminUser[req.body.user]) {
-      req.session.name = req.body.user;
-      return res.send(200);
-    } else {
-      return res.send(400);
-    }
-  };
+
+  /*
+    Start of User functions:
+      show user login page
+      log in user
+      show user experiment page
+      handle data from user experiment page submission
+   */
 
 
   /*
-    Show admin page
+    Serves user login page /TODO: no such page
    */
 
-  showAdminCPanel = function(req, res) {
-    var page;
-    console.log('GET view admin control panel');
-    if (req.session.name) {
-      page = 'server/views/admin-gui.jade';
-    } else {
-      page = 'server/views/admin-login.jade';
-    }
-    return jade.renderFile(page, {}, function(errJade, htmlResult) {
+  showUserLogin = function(req, res) {
+    console.log("GET user login page");
+    return jade.renderFile('server/views/user-login.jade', {}, function(errJade, htmlResult) {
       if (errJade) {
         return handleError(errJade, res);
       } else {
@@ -92,29 +59,38 @@
 
 
   /*
-    Returns full table of users
+    Logs in user
    */
 
-  showUsers = function(req, res) {
-    console.log('GET view user table');
-    return User.find({}, 'uid email status', function(errQuery, doc) {
+  logInUser = function(req, res) {
+    var hashedPass;
+    console.log("POST attempting to log in " + req.params.uid);
+    hashedPass = crypto.createHash('sha512');
+    hashedPass.update(req.params.pass, 'ascii');
+    return Users.findOne({
+      uid: req.params.uid,
+      hashedPassword: hashedPass.digest('hex')
+    }, function(errQuery, usrQuery) {
       if (errQuery) {
         return handleError(errQuery, res);
+      } else if (!usrQuery) {
+        console.error('logInUser: invalid uid or pass');
+        return res.send(400);
       } else {
-        return res.send(doc);
+        return res.send(200);
       }
     });
   };
 
 
   /*
-  	Serves user page, showing user uid and status
+  	Serves user's experiment page, showing user uid and status
    */
 
   showUserPage = function(req, res) {
     var usr;
-    console.log('GET request from ' + req.params.id);
-    usr = User.findById(queryId(req.params.id));
+    console.log("GET request from " + req.params.id);
+    usr = User.findById(mongoose.Types.ObjectId(req.params.id));
     return usr.exec(function(errQuery, usrQuery) {
       if (errQuery) {
         return handleError(errQuery, res);
@@ -138,12 +114,12 @@
 
 
   /*
-    Updates user status
+    Handles experiment page submission, currently only updates user status
    */
 
   submitUserForm = function(req, res) {
-    console.log('POST request from ' + req.params.id);
-    return User.findByIdAndUpdate(queryId(req.params.id), {
+    console.log("POST request from " + req.params.id);
+    return User.findByIdAndUpdate(mongoose.Types.ObjectId(req.params.id), {
       '$set': {
         'status': 'completed'
       }
@@ -162,38 +138,171 @@
 
 
   /*
+    Start of Admin functions
+      log in admin
+      show admin page/login
+      create a new experiment
+      show experiment table
+      show user table
+      add a user
+      invites a user /TODO update to use experiment's user table
+      invites all users /TODO update to use experiment's user table
+   */
+
+
+  /*
+    Logs in the Admin
+   */
+
+  logInAdmin = function(req, res) {
+    console.log("POST admin log in with credentials " + req.body.user + " " + req.body.pass);
+    if (req.body.pass === settings.confSite.adminUser[req.body.user]) {
+      req.session.name = req.body.user;
+      return res.send(200);
+    } else {
+      return res.send(400);
+    }
+  };
+
+
+  /*
+    Show admin page
+   */
+
+  showAdminCPanel = function(req, res) {
+    var page;
+    console.log("GET admin control panel");
+    if (req.session.name) {
+      page = 'server/views/admin-gui.jade';
+    } else {
+      page = 'server/views/admin-login.jade';
+    }
+    return jade.renderFile(page, {}, function(errJade, htmlResult) {
+      if (errJade) {
+        return handleError(errJade, res);
+      } else {
+        return res.send(htmlResult);
+      }
+    });
+  };
+
+
+  /*
+    Creates a new experiment
+   */
+
+  createExperiment = function(req, res) {
+    console.log("POST new experiment");
+    console.log(req.body);
+    return Experiment.create({
+      name: req.body.name,
+      "private": req.body["private"] === 'true' ? true : false,
+      anonymous: req.body.anonymous === 'true' ? true : false,
+      timeLimit: req.body.timeLimit,
+      start: new Date(req.body.start),
+      end: new Date(req.body.end),
+      users: []
+    }, function(saveErr, exp) {
+      if (saveErr) {
+        return handleError(saveErr, res);
+      } else {
+        console.log(exp);
+        return res.send(200);
+      }
+    });
+  };
+
+
+  /*
+    Returns full table of experiments
+   */
+
+  showExperiments = function(req, res) {
+    console.log("GET experiments table");
+    return Experiment.find({}, function(errQuery, doc) {
+      if (errQuery) {
+        return handleError(errQuery, res);
+      } else {
+        return res.send(doc);
+      }
+    });
+  };
+
+
+  /*
+    Renders the Jade page for the user table of an experiment
+   */
+
+  expUsersTemplate = function(req, res) {
+    console.log("GET page for experiment " + req.params.eid);
+    return jade.renderFile("server/views/admin-gui-usertable.jade", {
+      eid: req.params.eid
+    }, function(errJade, htmlResult) {
+      if (errJade) {
+        return handleError(errJade, res);
+      } else {
+        return res.send(htmlResult);
+      }
+    });
+  };
+
+
+  /*
+    Queries db for users in an experiment
+   */
+
+  showExpUsers = function(req, res) {
+    console.log("GET users from experiment " + req.params.eid);
+    return Experiment.findById(mongoose.Types.ObjectId(req.params.eid), "users", function(errExpQuery, expQuery) {
+      if (errExpQuery) {
+        return handleError(errExpQuery, res);
+      } else {
+        console.log(expQuery.users);
+        return res.send(expQuery);
+      }
+    });
+  };
+
+
+  /*
     Adds one user using fields {uid, email}
    */
 
   addUser = function(req, res) {
-    console.log('POST add user uid:' + req.body.uid + ' email:' + req.body.email);
-    return User.findOne({
+    console.log("POST add user uid:" + req.body.uid + " email:" + req.body.email + " to exp " + req.body.eid);
+    return Experiment.find({
+      '_id': mongoose.Types.ObjectId(req.body.eid),
       '$or': [
         {
-          'uid': req.body.uid
+          'users.uid': req.body.uid
         }, {
-          'email': req.body.email
+          'users.email': req.body.email
         }
       ]
     }, function(errQuery, usrQuery) {
-      var usr;
       if (errQuery) {
         return handleError(errQuery, res);
-      } else if (usrQuery) {
+      } else if (usrQuery.length) {
         console.error('addUser: uid or email already exists');
         return res.send(400);
       } else {
-        usr = new User({
-          'uid': req.body.uid,
-          'email': req.body.email,
-          'status': 'uninvited'
-        });
-        return usr.save(function(errSave) {
-          if (errSave) {
-            return handleError(errSave, res);
+        return Experiment.findById(mongoose.Types.ObjectId(req.body.eid), function(errExpQuery, expQuery) {
+          if (errExpQuery) {
+            return handleError(errExpQuery, res);
           } else {
-            console.log('addUser succeeded');
-            return res.send(200);
+            expQuery.users.push({
+              'uid': req.body.uid,
+              'email': req.body.email,
+              'status': 'uninvited'
+            });
+            return expQuery.save(function(errSave, newUserDoc) {
+              if (errSave) {
+                return handleError(errSave, res);
+              } else {
+                console.log("Saved " + newUserDoc);
+                return res.send(200);
+              }
+            });
           }
         });
       }
@@ -208,20 +317,18 @@
 
   inviteOne = function(req, res) {
     var usr;
-    console.log('POST invite ' + req.body.uid);
-    usr = User.findOneAndUpdate({
-      'uid': req.body.uid,
-      'status': 'uninvited'
-    }, {
-      $set: {
-        'status': 'invited'
+    console.log("POST invite " + req.body.uid + " from exp " + req.body.eid);
+    usr = Experiment.find({
+      '_id': mongoose.Types.ObjectId(req.body.eid),
+      'users': {
+        'uid': req.body.uid,
+        'status': 'uninvited'
       }
     });
     return usr.exec(function(errQuery, usrQuery) {
       if (errQuery) {
-        handleError(errQuery, res);
-      }
-      if (!usrQuery) {
+        return handleError(errQuery, res);
+      } else if (!usrQuery) {
         console.error('inviteOne: no such user or user already invited');
         return res.send(400);
       } else {
@@ -233,8 +340,19 @@
           if (errJade) {
             return handleError(errJade, res);
           } else {
-            emailer.sendEmail(usr.email, 'Invitation', htmlResult);
-            return res.send(200);
+            return emailer.sendEmail(usr.email, 'Invitation', htmlResult, function(errMail, resMail) {
+              if (errMail) {
+                return handleError(errMail, res);
+              } else {
+                console.log(resMail);
+                usr.status = 'invited';
+                return usr.save(function(errSave) {
+                  if (errSave) {
+                    return handleError(errSave, res);
+                  }
+                });
+              }
+            });
           }
         });
       }
@@ -249,52 +367,86 @@
 
   inviteAll = function(req, res) {
     var usrs;
-    console.log('POST: invite all uninvited');
+    console.log("POST: invite all uninvited from exp " + req.body.eid);
     usrs = User.find({
       'status': 'uninvited'
     });
     return usrs.exec(function(errQuery, usrQuery) {
-      var usr, _i, _len, _results;
+      var replySent, usr, _i, _len, _results;
       if (errQuery) {
-        return handleError(errQuery, res);
+        console.error(errQuery);
+        return res.send(500);
       } else if (usrQuery.length === 0) {
         console.error('inviteAll: no uninvited users');
-        return res.send(200);
+        return res.send(400);
       } else {
+        replySent = false;
         _results = [];
         for (_i = 0, _len = usrQuery.length; _i < _len; _i++) {
           usr = usrQuery[_i];
-          _results.push((function(usr) {
-            jade.renderFile('server/views/email-invite.jade', {
-              expname: 'Default',
-              rooturl: settings.confSite.rootUrl,
-              uid: usr._id
-            }, function(errJade, htmlResult) {
-              if (errJade) {
-                return handleError(errJade, res);
-              } else {
-                return emailer.sendEmail(usr.email, 'Invitation', htmlResult);
+          _results.push(jade.renderFile('server/views/email-invite.jade', {
+            expname: 'Default',
+            rooturl: settings.confSite.rootUrl,
+            uid: usr._id
+          }, function(errJade, htmlResult) {
+            if (errJade) {
+              console.error(errJade);
+              if (!replySent) {
+                replySent = true;
+                return res.send(500);
               }
-            });
-            usr.status = 'invited';
-            usr.save();
-            return res.send(200);
-          })(usr));
+            } else {
+              return emailer.sendEmail(usr.email, 'Invitation', htmlResult, function(errMail, resMail) {
+                if (errMail) {
+                  console.error(errMail);
+                  if (!replySent) {
+                    replySent = true;
+                    return res.send(500);
+                  }
+                } else {
+                  console.log(resMail);
+                  usr.status = 'invited';
+                  return usr.save(function(errSave) {
+                    if (errSave) {
+                      console.error(errSave);
+                      if (!replySent) {
+                        replySent = true;
+                        return res.send(500);
+                      }
+                    } else if (usr === usrQuery.slice(-1)[0]) {
+                      replySent = true;
+                      return res.send(200);
+                    }
+                  });
+                }
+              });
+            }
+          }));
         }
         return _results;
       }
     });
   };
 
-  exports.showAdminCPanel = showAdminCPanel;
+  exports.showUserLogin = showUserLogin;
 
-  exports.logInAdmin = logInAdmin;
-
-  exports.showUsers = showUsers;
+  exports.logInUser = logInUser;
 
   exports.showUserPage = showUserPage;
 
   exports.submitUserForm = submitUserForm;
+
+  exports.showAdminCPanel = showAdminCPanel;
+
+  exports.logInAdmin = logInAdmin;
+
+  exports.showExperiments = showExperiments;
+
+  exports.createExperiment = createExperiment;
+
+  exports.expUsersTemplate = expUsersTemplate;
+
+  exports.showExpUsers = showExpUsers;
 
   exports.addUser = addUser;
 
