@@ -2,7 +2,7 @@ nodemailer = require('nodemailer')
 settings = require('../config')
 
 #nodemailer setup
-smtpTransport = nodemailer.createTransport("SMTP", settings.confMail.smtp)
+smtpTransport = nodemailer.createTransport(settings.confMail.smtp)
 
 sendEmail = (target, subj, content, callback) ->
   mailOptions =
@@ -11,7 +11,6 @@ sendEmail = (target, subj, content, callback) ->
     subject: subj
     html: content
     generateTextFromHtml: true
-
   smtpTransport.sendMail(mailOptions, callback)
 
 exports.sendEmail = sendEmail

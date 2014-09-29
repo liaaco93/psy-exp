@@ -7,7 +7,7 @@
  */
 
 (function() {
-  var Experiment, User, addUser, createExperiment, crypto, dbSchemata, emailer, expUsersTemplate, handleError, inviteAll, inviteOne, jade, logInAdmin, logInUser, mongoose, settings, showAdminCPanel, showExpUsers, showExperiments, showUserLogin, showUserPage, submitUserForm, _;
+  var Experiment, Q, User, addUser, createExperiment, crypto, dbSchemata, emailer, expUsersTemplate, handleError, inviteAll, inviteOne, jade, logInAdmin, logInUser, mongoose, promiseInvite, settings, showAdminCPanel, showExpUsers, showExperiments, showUserLogin, showUserPage, submitUserForm, _;
 
   mongoose = require('mongoose');
 
@@ -16,6 +16,8 @@
   crypto = require('crypto');
 
   _ = require('underscore');
+
+  Q = require('q');
 
   emailer = require('./modules/emailer');
 
@@ -257,7 +259,6 @@
       if (errExpQuery) {
         return handleError(errExpQuery, res);
       } else {
-        console.log(expQuery.users);
         return res.send(expQuery);
       }
     });
@@ -316,37 +317,45 @@
    */
 
   inviteOne = function(req, res) {
-    var usr;
+    var xutable;
     console.log("POST invite " + req.body.uid + " from exp " + req.body.eid);
-    usr = Experiment.find({
+    xutable = Experiment.find({
       '_id': mongoose.Types.ObjectId(req.body.eid),
       'users': {
         'uid': req.body.uid,
         'status': 'uninvited'
       }
     });
-    return usr.exec(function(errQuery, usrQuery) {
+    return xutable.exec(function(errQuery, query) {
+      var target, user, _i, _len, _ref;
       if (errQuery) {
         return handleError(errQuery, res);
-      } else if (!usrQuery) {
+      } else if (query.length === 0) {
         console.error('inviteOne: no such user or user already invited');
         return res.send(400);
       } else {
+        _ref = query.users;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          user = _ref[_i];
+          if (user.uid = req.body.uid && (user.status = 'uninvited')) {
+            target = user;
+          }
+        }
         return jade.renderFile('server/views/email-invite.jade', {
-          expname: 'Default',
+          expname: query.name,
           rooturl: settings.confSite.rootUrl,
-          uid: usr._id
+          uid: target._id
         }, function(errJade, htmlResult) {
           if (errJade) {
             return handleError(errJade, res);
           } else {
-            return emailer.sendEmail(usr.email, 'Invitation', htmlResult, function(errMail, resMail) {
+            return emailer.sendEmail(target.email, 'Invitation', htmlResult, function(errMail, resMail) {
               if (errMail) {
                 return handleError(errMail, res);
               } else {
                 console.log(resMail);
-                usr.status = 'invited';
-                return usr.save(function(errSave) {
+                target.status = 'invited';
+                return query.save(function(errSave) {
                   if (errSave) {
                     return handleError(errSave, res);
                   }
@@ -361,69 +370,83 @@
 
 
   /*
+    Promise-returning function to ensure that e-mails are sent and user statuses are modified
+      synchronously in inviteAll
+   */
+
+  promiseInvite = function(expname, userid, email, index) {
+    var deferred;
+    deferred = Q.defer();
+    jade.renderFile('server/views/email-invite.jade', {
+      expname: expname,
+      rooturl: settings.confSite.rootUrl,
+      uid: userid
+    }, function(errJade, htmlResult) {
+      if (errJade) {
+        return deferred.resolve(false);
+      } else {
+        return emailer.sendEmail(email, 'Invitation', htmlResult, function(errMail, resMail) {
+          if (errMail) {
+            return deferred.resolve(false);
+          } else {
+            return deferred.resolve(index);
+          }
+        });
+      }
+    });
+    return deferred.promise;
+  };
+
+
+  /*
     Sends e-mails to all uninvited users
     Updates each status to invited
    */
 
   inviteAll = function(req, res) {
-    var usrs;
     console.log("POST: invite all uninvited from exp " + req.body.eid);
-    usrs = User.find({
-      'status': 'uninvited'
-    });
-    return usrs.exec(function(errQuery, usrQuery) {
-      var replySent, usr, _i, _len, _results;
+    return Experiment.findOne({
+      '_id': mongoose.Types.ObjectId(req.body.eid),
+      'users.status': 'uninvited'
+    }, function(errQuery, query) {
+      var i, promises, u, _i, _len, _ref;
       if (errQuery) {
         console.error(errQuery);
         return res.send(500);
-      } else if (usrQuery.length === 0) {
+      } else if (query === null) {
         console.error('inviteAll: no uninvited users');
         return res.send(400);
       } else {
-        replySent = false;
-        _results = [];
-        for (_i = 0, _len = usrQuery.length; _i < _len; _i++) {
-          usr = usrQuery[_i];
-          _results.push(jade.renderFile('server/views/email-invite.jade', {
-            expname: 'Default',
-            rooturl: settings.confSite.rootUrl,
-            uid: usr._id
-          }, function(errJade, htmlResult) {
-            if (errJade) {
-              console.error(errJade);
-              if (!replySent) {
-                replySent = true;
-                return res.send(500);
-              }
-            } else {
-              return emailer.sendEmail(usr.email, 'Invitation', htmlResult, function(errMail, resMail) {
-                if (errMail) {
-                  console.error(errMail);
-                  if (!replySent) {
-                    replySent = true;
-                    return res.send(500);
-                  }
-                } else {
-                  console.log(resMail);
-                  usr.status = 'invited';
-                  return usr.save(function(errSave) {
-                    if (errSave) {
-                      console.error(errSave);
-                      if (!replySent) {
-                        replySent = true;
-                        return res.send(500);
-                      }
-                    } else if (usr === usrQuery.slice(-1)[0]) {
-                      replySent = true;
-                      return res.send(200);
-                    }
-                  });
-                }
-              });
-            }
-          }));
+        promises = [];
+        _ref = query.users;
+        for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
+          u = _ref[i];
+          if (u.status === 'uninvited') {
+            promises.push(promiseInvite(query.name, u._id, u.email, i));
+          }
         }
-        return _results;
+        return Q.all(promises).then(function(indices) {
+          var deferred, _j, _len1;
+          deferred = Q.defer();
+          for (_j = 0, _len1 = indices.length; _j < _len1; _j++) {
+            i = indices[_j];
+            if (i !== false) {
+              query.users[i].status = 'invited';
+            }
+          }
+          query.save(function(errSave) {
+            if (errSave) {
+              return deferred.reject(500);
+            } else {
+              return deferred.resolve(200);
+            }
+          });
+          return deferred.promise;
+        }).done((function(result) {
+          return res.send(result);
+        }), (function(result) {
+          return res.send(result);
+        }));
       }
     });
   };

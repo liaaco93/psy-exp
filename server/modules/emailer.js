@@ -6,7 +6,7 @@
 
   settings = require('../config');
 
-  smtpTransport = nodemailer.createTransport("SMTP", settings.confMail.smtp);
+  smtpTransport = nodemailer.createTransport(settings.confMail.smtp);
 
   sendEmail = function(target, subj, content, callback) {
     var mailOptions;

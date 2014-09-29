@@ -3,7 +3,7 @@
   var loadUsers;
 
   loadUsers = function() {
-    return $.get("/admin/viewusers/" + ($('#userTable').attr("eid")), function(data, txtStatus, jqXHR) {
+    $.get("/admin/viewusers/" + ($('#userTable').attr("eid")), function(data, txtStatus, jqXHR) {
       var user, _i, _len, _ref;
       $('#userData').children().detach();
       console.log(data);
@@ -14,6 +14,7 @@
       }
       return $('.ui.dropdown').dropdown();
     });
+    return console.log("boop");
   };
 
   $(function() {
@@ -22,7 +23,8 @@
 
   $('#invOne').submit(function() {
     $.post('/admin/invite', {
-      uid: this.uid.value
+      uid: this.uid.value,
+      eid: $('#userTable').attr("eid")
     }).done(function() {
       $('#resultInvOne').html("OK");
       return loadUsers();
@@ -37,7 +39,9 @@
   });
 
   $('#invAll').submit(function() {
-    $.post('/admin/inviteall').done(function() {
+    $.post('/admin/inviteall', {
+      eid: $('#userTable').attr("eid")
+    }).done(function() {
       $('#resultInvAll').html("OK");
       return loadUsers();
     }).fail(function(data) {

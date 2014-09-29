@@ -10,7 +10,7 @@ loadExps = () ->
           <td>#{exp.timeLimit}</td>
           <td>#{exp.start}</td>
           <td>#{exp.end}</td>
-          <td><form><input type='button' id=#{exp._id} class='experi' value='goto #{exp._id}'/></td>
+          <td><form><input type='button' id=#{exp._id} class='experi' value='goto #{exp.name}'/></td>
         </tr>"
       )
   )
@@ -41,7 +41,7 @@ $('#experimentData').on('click', '.experi', () ->
   tabId = $(this).attr("id")
   if tabMenu.find("#exp\\ #{tabId}").length <= 0
     tabMenu.append(
-      "<a id='exp #{$(this).attr("id")}' eid='#{$(this).attr("id")}' class='item'> #{$(this).attr('id')} </a>"
+      "<a id='exp #{$(this).attr("id")}' eid='#{$(this).attr("id")}' class='item'> #{$(this).attr('value')[5..]} </a>"
     )
   tabMenu.find("#exp\\ #{tabId}").addClass("active")
   $("#tabContents", parent.document).attr("src", "/admin/view/#{$(this).attr('id')}")

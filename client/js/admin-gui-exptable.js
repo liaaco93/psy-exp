@@ -9,7 +9,7 @@
       _results = [];
       for (_i = 0, _len = data.length; _i < _len; _i++) {
         exp = data[_i];
-        _results.push($('#experimentData').append("<tr> <td>" + exp.name + "</td> <td>" + (exp["private"] ? 'yes' : 'no') + "</td> <td>" + (exp.anonymous ? 'yes' : 'no') + "</td> <td>" + exp.timeLimit + "</td> <td>" + exp.start + "</td> <td>" + exp.end + "</td> <td><form><input type='button' id=" + exp._id + " class='experi' value='goto " + exp._id + "'/></td> </tr>"));
+        _results.push($('#experimentData').append("<tr> <td>" + exp.name + "</td> <td>" + (exp["private"] ? 'yes' : 'no') + "</td> <td>" + (exp.anonymous ? 'yes' : 'no') + "</td> <td>" + exp.timeLimit + "</td> <td>" + exp.start + "</td> <td>" + exp.end + "</td> <td><form><input type='button' id=" + exp._id + " class='experi' value='goto " + exp.name + "'/></td> </tr>"));
       }
       return _results;
     });
@@ -37,7 +37,7 @@
     tabMenu.children().removeClass("active");
     tabId = $(this).attr("id");
     if (tabMenu.find("#exp\\ " + tabId).length <= 0) {
-      tabMenu.append("<a id='exp " + ($(this).attr("id")) + "' eid='" + ($(this).attr("id")) + "' class='item'> " + ($(this).attr('id')) + " </a>");
+      tabMenu.append("<a id='exp " + ($(this).attr("id")) + "' eid='" + ($(this).attr("id")) + "' class='item'> " + ($(this).attr('value').slice(5)) + " </a>");
     }
     tabMenu.find("#exp\\ " + tabId).addClass("active");
     return $("#tabContents", parent.document).attr("src", "/admin/view/" + ($(this).attr('id')));

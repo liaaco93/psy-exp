@@ -7,6 +7,7 @@ mongoose = require('mongoose')
 jade = require('jade')
 crypto = require('crypto')
 _ = require('underscore')
+Q = require('q')
 emailer = require('./modules/emailer')
 dbSchemata = require('./modules/dbSetup')
 settings = require('./config')
@@ -19,6 +20,8 @@ Experiment = mongoose.model('experiments', dbSchemata.ExperimentSchema)
 handleError = (err, res) ->
   console.error(err)
   res.send(500)
+
+
 
 ###
   Start of User functions:
@@ -203,7 +206,6 @@ showExpUsers = (req, res) ->
       if errExpQuery
         handleError(errExpQuery, res)
       else
-        console.log(expQuery.users)
         res.send(expQuery)
   )
 
@@ -248,83 +250,108 @@ addUser = (req, res) ->
 ###
 inviteOne = (req, res) ->
   console.log("POST invite #{req.body.uid} from exp #{req.body.eid}")
-  usr = Experiment.find({
-    '_id': mongoose.Types.ObjectId(req.body.eid),
-    'users': {'uid': req.body.uid, 'status': 'uninvited'}})
-  usr.exec((errQuery, usrQuery) ->
+  xutable = Experiment.find(
+    {
+      '_id': mongoose.Types.ObjectId(req.body.eid),
+      'users': {'uid': req.body.uid, 'status': 'uninvited'}
+    }
+  )
+  xutable.exec((errQuery, query) ->
     if errQuery
       handleError(errQuery, res)
-    else if not usrQuery
+    else if query.length is 0
       console.error('inviteOne: no such user or user already invited')
       res.send(400)
     else
+      for user in query.users
+        if user.uid = req.body.uid and user.status = 'uninvited'
+          target = user
       jade.renderFile('server/views/email-invite.jade',
-        {expname: 'Default', rooturl: settings.confSite.rootUrl, uid: usr._id},
+        {expname: query.name, rooturl: settings.confSite.rootUrl, uid: target._id},
         (errJade, htmlResult) ->
           if errJade
             handleError(errJade, res)
           else
-            emailer.sendEmail(usr.email, 'Invitation', htmlResult, (errMail, resMail) ->
+            emailer.sendEmail(target.email, 'Invitation', htmlResult, (errMail, resMail) ->
               if errMail
                 handleError(errMail, res)
               else
                 console.log(resMail)
-                usr.status = 'invited'
-                usr.save((errSave) ->
+                target.status = 'invited'
+                query.save((errSave) ->
                   if errSave
                     handleError(errSave, res)
                 )
             )
       )
   )
+###
+  Promise-returning function to ensure that e-mails are sent and user statuses are modified
+    synchronously in inviteAll
+###
+promiseInvite = (expname, userid, email, index) ->
+  deferred = Q.defer()
+
+  jade.renderFile('server/views/email-invite.jade',
+    {expname: expname, rooturl: settings.confSite.rootUrl, uid: userid},
+    (errJade, htmlResult) ->
+      if errJade
+        deferred.resolve(false)
+      else
+        emailer.sendEmail(email, 'Invitation', htmlResult, (errMail, resMail) ->
+          if errMail
+            deferred.resolve(false)
+          else
+            deferred.resolve(index)
+        )
+  )
+  return deferred.promise
 
 ###
   Sends e-mails to all uninvited users
   Updates each status to invited
 ###
+
 inviteAll = (req, res) ->
   console.log("POST: invite all uninvited from exp #{req.body.eid}")
-  usrs = User.find({'status': 'uninvited'})
-  usrs.exec((errQuery, usrQuery) ->
+  Experiment.findOne(
+    {
+      '_id': mongoose.Types.ObjectId(req.body.eid),
+      'users.status': 'uninvited'
+    },
+  (errQuery, query) ->
     if errQuery
       console.error(errQuery)
       res.send(500)
-    else if usrQuery.length is 0
+    else if query is null
       console.error('inviteAll: no uninvited users')
       res.send(400)
     else
-      replySent = false
-      for usr in usrQuery
-        jade.renderFile('server/views/email-invite.jade',
-          {expname: 'Default', rooturl: settings.confSite.rootUrl, uid: usr._id},
-          (errJade, htmlResult) ->
-            if errJade
-              console.error(errJade)
-              if not replySent
-                replySent = true
-                res.send(500)
+      promises = []
+
+      for u, i in query.users
+        if u.status is 'uninvited'
+          promises.push(promiseInvite(query.name, u._id, u.email, i))
+
+      Q.all(promises)
+      .then(
+        (indices) ->
+          deferred = Q.defer()
+          for i in indices
+            if i != false
+              query.users[i].status = 'invited'
+          query.save((errSave) ->
+            if errSave
+              deferred.reject(500)
             else
-              emailer.sendEmail(usr.email, 'Invitation', htmlResult, (errMail, resMail) ->
-                if errMail
-                  console.error(errMail)
-                  if not replySent
-                    replySent = true
-                    res.send(500)
-                else
-                  console.log(resMail)
-                  usr.status = 'invited'
-                  usr.save((errSave) ->
-                    if errSave
-                      console.error(errSave)
-                      if not replySent
-                        replySent = true
-                        res.send(500)
-                    else if usr is usrQuery[-1..][0]
-                      replySent = true
-                      res.send(200)
-                  )
-              )
-        )
+              deferred.resolve(200)
+          )
+          return deferred.promise
+      )
+      .done(
+        ((result) -> res.send(result)),
+        ((result) -> res.send(result))
+      )
   )
 
 #User stuff

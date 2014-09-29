@@ -12,6 +12,7 @@ loadUsers = () ->
       )
     $('.ui.dropdown').dropdown()
   )
+  console.log("boop")
 
 $(() ->
   loadUsers()
@@ -21,6 +22,7 @@ $('#invOne').submit(() ->
   $.post('/admin/invite',
     {
       uid: this.uid.value
+      eid: $('#userTable').attr("eid")
     }
   )
   .done(()->
@@ -37,7 +39,11 @@ $('#invOne').submit(() ->
 )
 
 $('#invAll').submit(() ->
-  $.post('/admin/inviteall')
+  $.post('/admin/inviteall',
+    {
+      eid: $('#userTable').attr("eid")
+    }
+  )
   .done(()->
     $('#resultInvAll').html("OK")
     loadUsers()

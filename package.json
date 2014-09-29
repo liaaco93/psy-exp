@@ -12,8 +12,9 @@
       "connect-mongo": "0.x.x",
       "serve-static": "1.x.x",
       "mongoose": "3.x.x",
-      "nodemailer": "0.x.x",
+      "nodemailer": "1.x.x",
       "jade": "1.x.x",
-      "underscore": "1.x.x"
+      "underscore": "1.x.x",
+      "q": "1.x.x"
   }
 }
