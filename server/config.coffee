@@ -3,7 +3,7 @@ exports.confMail =
     service: "Gmail"
     auth:
       user: "lc73571n9@gmail.com"
-      pass: "?"
+      pass: "53k2175p1d325"
   content:
     from: "Test Bot \<lc73571n9@gmail.com\>"
 
