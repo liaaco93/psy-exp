@@ -53,7 +53,7 @@ app.route('/user/new')
   .get(reqHand.showNewUser)
   .post(reqHand.makeNewUser)
 ###
-app.get('/', (req,res)->res.send(200))
+app.post('/newuser', reqHand.createUser)
 app.get('/admin', reqHand.showAdminCPanel)
 app.post('/admin/login', reqHand.logInAdmin)
 app.get('/admin/viewexps', reqHand.showExperiments)

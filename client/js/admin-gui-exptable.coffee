@@ -23,7 +23,7 @@ $('#newExp').submit(() ->
       name: this.name.value,
       private: this.private.checked,
       anonymous: this.anonymous.checked,
-      timeLimit: this.timeLimit.value
+      timeLimit: this.timeLimit.value,
       start: this.start.value,
       end: this.end.value
     }

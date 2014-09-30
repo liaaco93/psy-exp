@@ -65,6 +65,32 @@ logInUser = (req, res) ->
   )
 
 ###
+  Adds a new user to the db
+  TODO: hash password
+  TODO: verify field inputs
+  TODO: check if referral, so can auto-add exp
+###
+createUser = (req, res) ->
+  console.log("POST creating user from #{req.body.email}")
+  hashedPass = crypto.createHash('sha512')
+  hashedPass.update(req.body.pass, 'ascii')
+  User.create(
+    {
+      email: req.body.email,
+      hashedPassword: hashedPass.digest('hex'),
+      demographics: {
+        age: req.body.age,
+        gender: req.body.gender,
+        ethnicity: req.body.ethnicity
+      }
+    }, (saveErr, usr)->
+      if saveErr
+        handleError(saveErr, res)
+      else
+        console.log(usr)
+        res.send(200)
+  )
+###
 	Serves user's experiment page, showing user uid and status
 ###
 showUserPage = (req, res) ->
@@ -114,8 +140,8 @@ submitUserForm = (req, res) ->
     show experiment table
     show user table
     add a user
-    invites a user /TODO update to use experiment's user table
-    invites all users /TODO update to use experiment's user table
+    invites a user
+    invites all users
 ###
 
 ###
@@ -153,7 +179,6 @@ showAdminCPanel = (req, res) ->
 ###
 createExperiment = (req, res) ->
   console.log("POST new experiment")
-  console.log(req.body)
   Experiment.create(
     {
       name: req.body.name,
@@ -357,6 +382,7 @@ inviteAll = (req, res) ->
 #User stuff
 exports.showUserLogin = showUserLogin
 exports.logInUser = logInUser
+exports.createUser = createUser
 exports.showUserPage = showUserPage
 exports.submitUserForm = submitUserForm
 #Admin stuff

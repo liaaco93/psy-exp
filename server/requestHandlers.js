@@ -7,7 +7,7 @@
  */
 
 (function() {
-  var Experiment, Q, User, addUser, createExperiment, crypto, dbSchemata, emailer, expUsersTemplate, handleError, inviteAll, inviteOne, jade, logInAdmin, logInUser, mongoose, promiseInvite, settings, showAdminCPanel, showExpUsers, showExperiments, showUserLogin, showUserPage, submitUserForm, _;
+  var Experiment, Q, User, addUser, createExperiment, createUser, crypto, dbSchemata, emailer, expUsersTemplate, handleError, inviteAll, inviteOne, jade, logInAdmin, logInUser, mongoose, promiseInvite, settings, showAdminCPanel, showExpUsers, showExperiments, showUserLogin, showUserPage, submitUserForm, _;
 
   mongoose = require('mongoose');
 
@@ -86,6 +86,37 @@
 
 
   /*
+    Adds a new user to the db
+    TODO: hash password
+    TODO: verify field inputs
+    TODO: check if referral, so can auto-add exp
+   */
+
+  createUser = function(req, res) {
+    var hashedPass;
+    console.log("POST creating user from " + req.body.email);
+    hashedPass = crypto.createHash('sha512');
+    hashedPass.update(req.body.pass, 'ascii');
+    return User.create({
+      email: req.body.email,
+      hashedPassword: hashedPass.digest('hex'),
+      demographics: {
+        age: req.body.age,
+        gender: req.body.gender,
+        ethnicity: req.body.ethnicity
+      }
+    }, function(saveErr, usr) {
+      if (saveErr) {
+        return handleError(saveErr, res);
+      } else {
+        console.log(usr);
+        return res.send(200);
+      }
+    });
+  };
+
+
+  /*
   	Serves user's experiment page, showing user uid and status
    */
 
@@ -147,8 +178,8 @@
       show experiment table
       show user table
       add a user
-      invites a user /TODO update to use experiment's user table
-      invites all users /TODO update to use experiment's user table
+      invites a user
+      invites all users
    */
 
 
@@ -195,7 +226,6 @@
 
   createExperiment = function(req, res) {
     console.log("POST new experiment");
-    console.log(req.body);
     return Experiment.create({
       name: req.body.name,
       "private": req.body["private"] === 'true' ? true : false,
@@ -454,6 +484,8 @@
   exports.showUserLogin = showUserLogin;
 
   exports.logInUser = logInUser;
+
+  exports.createUser = createUser;
 
   exports.showUserPage = showUserPage;
 

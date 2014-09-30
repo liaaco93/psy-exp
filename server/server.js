@@ -69,9 +69,7 @@
     .post(reqHand.makeNewUser)
    */
 
-  app.get('/', function(req, res) {
-    return res.send(200);
-  });
+  app.post('/newuser', reqHand.createUser);
 
   app.get('/admin', reqHand.showAdminCPanel);
 
