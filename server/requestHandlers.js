@@ -343,9 +343,9 @@
               'uid': req.body.uid,
               'email': req.body.email,
               'status': 'uninvited',
-              link: "",
-              linkExpiry: "",
-              data: {}
+              'link': "",
+              'linkExpiry': "",
+              'data': {}
             });
             return expQuery.save(function(errSave, newUserDoc) {
               if (errSave) {
@@ -431,6 +431,8 @@
             return emailer.sendEmail(target.email, 'Invitation', htmlResult, function(resMail) {
               console.log(resMail);
               target.status = 'invited';
+              console.log(expiry);
+              console.log(linkhash);
               target.linkExpiry = expiry;
               target.link = linkhash;
               return query.save(function(errSave) {

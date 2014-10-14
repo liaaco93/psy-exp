@@ -278,9 +278,9 @@ addUser = (req, res) ->
               'uid': req.body.uid,
               'email': req.body.email,
               'status': 'uninvited',
-              link: "",
-              linkExpiry: ""
-              data: {}
+              'link': "",
+              'linkExpiry': ""
+              'data': {}
             })
             expQuery.save((errSave, newUserDoc) ->
               if errSave
@@ -353,6 +353,8 @@ inviteOne = (req, res) ->
               (resMail) ->
                 console.log(resMail)
                 target.status = 'invited'
+                console.log(expiry)
+                console.log(linkhash)
                 target.linkExpiry = expiry
                 target.link = linkhash
                 query.save((errSave) ->
