@@ -375,7 +375,7 @@
   generateExpLink = function(expObjId, uid, expiryDate) {
     var hashed, unifiedString;
     unifiedString = "" + expObjId + uid + expiryDate;
-    hashed = crypto.createHash('sha512');
+    hashed = crypto.createHash('sha1');
     hashed.update(unifiedString, 'ascii');
     return hashed.digest('hex');
   };
@@ -416,7 +416,6 @@
           res.send(400);
           return;
         }
-        console.log(target);
         expiry = new Date();
         expiry.setDate(expiry.getDate() + query.timeLimit);
         linkhash = generateExpLink(query._id, target.uid, expiry);
@@ -431,8 +430,6 @@
             return emailer.sendEmail(target.email, 'Invitation', htmlResult, function(resMail) {
               console.log(resMail);
               target.status = 'invited';
-              console.log(expiry);
-              console.log(linkhash);
               target.linkExpiry = expiry;
               target.link = linkhash;
               return query.save(function(errSave) {

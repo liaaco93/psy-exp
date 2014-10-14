@@ -303,7 +303,7 @@ addUser = (req, res) ->
 ###
 generateExpLink = (expObjId, uid, expiryDate) ->
   unifiedString = "" + expObjId + uid + expiryDate
-  hashed = crypto.createHash('sha512')
+  hashed = crypto.createHash('sha1')
   hashed.update(unifiedString, 'ascii')
   return(hashed.digest('hex'))
 
@@ -338,7 +338,6 @@ inviteOne = (req, res) ->
         console.error('inviteOne: user already invited')
         res.send(400)
         return
-      console.log(target)
       expiry = new Date()
       expiry.setDate(expiry.getDate() + query.timeLimit)
       linkhash = generateExpLink(query._id, target.uid, expiry)
@@ -353,8 +352,6 @@ inviteOne = (req, res) ->
               (resMail) ->
                 console.log(resMail)
                 target.status = 'invited'
-                console.log(expiry)
-                console.log(linkhash)
                 target.linkExpiry = expiry
                 target.link = linkhash
                 query.save((errSave) ->
