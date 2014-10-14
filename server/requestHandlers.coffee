@@ -274,7 +274,14 @@ addUser = (req, res) ->
           if errExpQuery
             handleError(errExpQuery, res)
           else
-            expQuery.users.push({'uid': req.body.uid, 'email': req.body.email, 'status': 'uninvited'})
+            expQuery.users.push({
+              'uid': req.body.uid,
+              'email': req.body.email,
+              'status': 'uninvited',
+              link: "",
+              linkExpiry: ""
+              data: {}
+            })
             expQuery.save((errSave, newUserDoc) ->
               if errSave
                 handleError(errSave, res)

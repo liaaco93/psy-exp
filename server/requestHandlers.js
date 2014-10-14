@@ -342,7 +342,10 @@
             expQuery.users.push({
               'uid': req.body.uid,
               'email': req.body.email,
-              'status': 'uninvited'
+              'status': 'uninvited',
+              link: "",
+              linkExpiry: "",
+              data: {}
             });
             return expQuery.save(function(errSave, newUserDoc) {
               if (errSave) {
