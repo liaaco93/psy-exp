@@ -7,7 +7,7 @@
  */
 
 (function() {
-  var Experiment, Q, User, addUser, createExperiment, createUser, crypto, dbSchemata, emailer, expUsersTemplate, handleError, inviteAll, inviteOne, jade, logInAdmin, logInUser, mongoose, promiseInvite, settings, showAdminCPanel, showExpUsers, showExperiments, showUserLogin, showUserPage, submitUserForm, _;
+  var Experiment, Q, User, addUser, createExperiment, createUser, crypto, dbSchemata, emailer, expUsersTemplate, generateExpLink, handleError, inviteAll, inviteOne, jade, logInAdmin, logInUser, mongoose, promiseInvite, settings, showAdminCPanel, showExpUsers, showExperiments, showUserLogin, showUserPage, submitUserForm, _;
 
   mongoose = require('mongoose');
 
@@ -121,19 +121,34 @@
    */
 
   showUserPage = function(req, res) {
-    var usr;
-    console.log("GET request from " + req.params.id);
-    usr = User.findById(mongoose.Types.ObjectId(req.params.id));
-    return usr.exec(function(errQuery, usrQuery) {
+    console.log("GET request from " + req.params.hashstring);
+    return Experiment.findOne({
+      'users.link': req.params.hashstring
+    }, function(errQuery, query) {
+      var found, i, target;
       if (errQuery) {
         return handleError(errQuery, res);
-      } else if (!usrQuery) {
-        console.error('showUserPage: _id not found');
+      } else if (!query) {
+        console.error('showUserPage: hash not found');
         return res.send(404);
       } else {
+        i = 0;
+        found = false;
+        while ((i < query.users.length) && (!found)) {
+          if (query.users[i].link = req.params.hashstring) {
+            target = query.users[i];
+            found = true;
+          }
+          i++;
+        }
+        if (i === query.users.length) {
+          console.error('showUserPage: something strange happened');
+          res.send(500);
+          return;
+        }
         return jade.renderFile('server/views/user-submit.jade', {
-          uid: usrQuery.uid,
-          status: usrQuery.status
+          uid: target.uid,
+          status: target.status
         }, function(errJade, htmlResult) {
           if (errJade) {
             return handleError(errJade, res);
@@ -342,6 +357,25 @@
 
 
   /*
+    Generates the experiment link hash for the user.
+    hash is a hash of:
+      experiment object id
+      user id
+      expiry date
+    Is a separate function in case link format should change, like if there would be performance improvements to having
+    some data explicit in the link or we need to add/remove info to/from the hash.
+   */
+
+  generateExpLink = function(expObjId, uid, expiryDate) {
+    var hashed, unifiedString;
+    unifiedString = "" + expObjId + uid + expiryDate;
+    hashed = crypto.createHash('sha512');
+    hashed.update(unifiedString, 'ascii');
+    return hashed.digest('hex');
+  };
+
+
+  /*
     Sends an e-mail to uninvited user indicated by uid
     Updates status to invited
    */
@@ -349,32 +383,41 @@
   inviteOne = function(req, res) {
     var xutable;
     console.log("POST invite " + req.body.uid + " from exp " + req.body.eid);
-    xutable = Experiment.find({
+    xutable = Experiment.findOne({
       '_id': mongoose.Types.ObjectId(req.body.eid),
-      'users': {
-        'uid': req.body.uid,
-        'status': 'uninvited'
-      }
+      'users.uid': req.body.uid,
+      'users.status': 'uninvited'
     });
     return xutable.exec(function(errQuery, query) {
-      var target, user, _i, _len, _ref;
+      var expiry, found, i, linkhash, linkstring, target;
       if (errQuery) {
         return handleError(errQuery, res);
       } else if (query.length === 0) {
-        console.error('inviteOne: no such user or user already invited');
+        console.error('inviteOne: no such user or no uninvited users');
         return res.send(400);
       } else {
-        _ref = query.users;
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          user = _ref[_i];
-          if (user.uid = req.body.uid && (user.status = 'uninvited')) {
-            target = user;
+        i = 0;
+        found = false;
+        while ((i < query.users.length) && (!found)) {
+          if ((query.users[i].uid === parseInt(req.body.uid)) && (query.users[i].status === 'uninvited')) {
+            target = query.users[i];
+            found = true;
           }
+          i++;
         }
+        if (i === query.users.length) {
+          console.error('inviteOne: user already invited');
+          res.send(400);
+          return;
+        }
+        console.log(target);
+        expiry = new Date();
+        expiry.setDate(expiry.getDate() + query.timeLimit);
+        linkhash = generateExpLink(query._id, target.uid, expiry);
+        linkstring = settings.confSite.rootUrl + 'exp/' + linkhash;
         return jade.renderFile('server/views/email-invite.jade', {
           expname: query.name,
-          rooturl: settings.confSite.rootUrl,
-          uid: target._id
+          link: linkstring
         }, function(errJade, htmlResult) {
           if (errJade) {
             return handleError(errJade, res);
@@ -385,6 +428,8 @@
               } else {
                 console.log(resMail);
                 target.status = 'invited';
+                target.linkExpiry = expiry;
+                target.link = linkhash;
                 return query.save(function(errSave) {
                   if (errSave) {
                     return handleError(errSave, res);
@@ -404,13 +449,12 @@
       synchronously in inviteAll
    */
 
-  promiseInvite = function(expname, userid, email, index) {
+  promiseInvite = function(expname, linkstring, email, index) {
     var deferred;
     deferred = Q.defer();
     jade.renderFile('server/views/email-invite.jade', {
       expname: expname,
-      rooturl: settings.confSite.rootUrl,
-      uid: userid
+      link: linkstring
     }, function(errJade, htmlResult) {
       if (errJade) {
         return deferred.resolve(false);
@@ -439,7 +483,7 @@
       '_id': mongoose.Types.ObjectId(req.body.eid),
       'users.status': 'uninvited'
     }, function(errQuery, query) {
-      var i, promises, u, _i, _len, _ref;
+      var expiry, i, linkhash, linkhashes, linkstring, promises, u, _i, _len, _ref;
       if (errQuery) {
         console.error(errQuery);
         return res.send(500);
@@ -448,11 +492,17 @@
         return res.send(400);
       } else {
         promises = [];
+        linkhashes = {};
+        expiry = new Date();
+        expiry.setDate(expiry.getDate() + query.timeLimit);
         _ref = query.users;
         for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
           u = _ref[i];
           if (u.status === 'uninvited') {
-            promises.push(promiseInvite(query.name, u._id, u.email, i));
+            linkhash = generateExpLink(query._id, u.uid, expiry);
+            linkstring = settings.confSite.rootUrl + 'exp/' + linkhash;
+            promises.push(promiseInvite(query.name, linkstring, u.email, i));
+            linkhashes[i] = linkhash;
           }
         }
         return Q.all(promises).then(function(indices) {
@@ -462,6 +512,8 @@
             i = indices[_j];
             if (i !== false) {
               query.users[i].status = 'invited';
+              query.users[i].linkExpiry = expiry;
+              query.users[i].link = linkhashes[i];
             }
           }
           query.save(function(errSave) {

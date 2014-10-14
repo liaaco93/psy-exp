@@ -5,7 +5,7 @@
       service: "Gmail",
       auth: {
         user: "lc73571n9@gmail.com",
-        pass: "?"
+        pass: "???"
       }
     },
     content: {

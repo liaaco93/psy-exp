@@ -58,7 +58,7 @@
     Main routes requiring serverside processing before sending to client
    */
 
-  app.route('/submit/:id').get(reqHand.showUserPage).post(reqHand.submitUserForm);
+  app.route('/exp/:hashstring').get(reqHand.showUserPage).post(reqHand.submitUserForm);
 
   app.route('/user/login').get(reqHand.showUserLogin).post(reqHand.logInUser);
 

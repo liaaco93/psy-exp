@@ -42,7 +42,7 @@ app.use('/static', serveStatic('./client')) #serving static content (includes ht
 ###
   Main routes requiring serverside processing before sending to client
 ###
-app.route('/submit/:id')
+app.route('/exp/:hashstring')
   .get(reqHand.showUserPage)
   .post(reqHand.submitUserForm)
 app.route('/user/login')

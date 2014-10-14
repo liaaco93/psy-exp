@@ -94,23 +94,35 @@ createUser = (req, res) ->
 	Serves user's experiment page, showing user uid and status
 ###
 showUserPage = (req, res) ->
-  console.log("GET request from #{req.params.id}")
-  usr = User.findById(mongoose.Types.ObjectId(req.params.id))
-  usr.exec((errQuery, usrQuery) ->
-    if errQuery
-      handleError(errQuery, res)
-    else if not usrQuery
-      console.error('showUserPage: _id not found')
-      res.send(404)
-    else
-      jade.renderFile('server/views/user-submit.jade',
-        {uid: usrQuery.uid, status: usrQuery.status},
-        (errJade, htmlResult) ->
-          if errJade
-            handleError(errJade, res)
-          else
-            res.send(htmlResult)
-      )
+  console.log("GET request from #{req.params.hashstring}")
+  Experiment.findOne(
+    {'users.link': req.params.hashstring},
+    (errQuery, query) ->
+      if errQuery
+        handleError(errQuery, res)
+      else if not query
+        console.error('showUserPage: hash not found')
+        res.send(404)
+      else
+        i = 0
+        found = false
+        while (i < query.users.length) and (not found)
+          if query.users[i].link = req.params.hashstring
+            target = query.users[i]
+            found = true
+          i++
+        if (i is query.users.length)
+          console.error('showUserPage: something strange happened')
+          res.send(500)
+          return
+        jade.renderFile('server/views/user-submit.jade',
+          {uid: target.uid, status: target.status},
+          (errJade, htmlResult) ->
+            if errJade
+              handleError(errJade, res)
+            else
+              res.send(htmlResult)
+        )
   )
 
 ###
@@ -270,29 +282,58 @@ addUser = (req, res) ->
   )
 
 ###
+  Generates the experiment link hash for the user.
+  hash is a hash of:
+    experiment object id
+    user id
+    expiry date
+  Is a separate function in case link format should change, like if there would be performance improvements to having
+  some data explicit in the link or we need to add/remove info to/from the hash.
+###
+generateExpLink = (expObjId, uid, expiryDate) ->
+  unifiedString = "" + expObjId + uid + expiryDate
+  hashed = crypto.createHash('sha512')
+  hashed.update(unifiedString, 'ascii')
+  return(hashed.digest('hex'))
+
+###
   Sends an e-mail to uninvited user indicated by uid
   Updates status to invited
 ###
 inviteOne = (req, res) ->
   console.log("POST invite #{req.body.uid} from exp #{req.body.eid}")
-  xutable = Experiment.find(
+  xutable = Experiment.findOne(
     {
       '_id': mongoose.Types.ObjectId(req.body.eid),
-      'users': {'uid': req.body.uid, 'status': 'uninvited'}
+      'users.uid': req.body.uid,
+      'users.status': 'uninvited' #this only restricts the query if there are NO uninvited users
     }
   )
   xutable.exec((errQuery, query) ->
     if errQuery
       handleError(errQuery, res)
     else if query.length is 0
-      console.error('inviteOne: no such user or user already invited')
+      console.error('inviteOne: no such user or no uninvited users')
       res.send(400)
     else
-      for user in query.users
-        if user.uid = req.body.uid and user.status = 'uninvited'
-          target = user
+      i = 0
+      found = false
+      while (i < query.users.length) and (not found)
+        if (query.users[i].uid is parseInt(req.body.uid)) and (query.users[i].status is 'uninvited')
+          target = query.users[i]
+          found = true
+        i++
+      if (i is query.users.length)
+        console.error('inviteOne: user already invited')
+        res.send(400)
+        return
+      console.log(target)
+      expiry = new Date()
+      expiry.setDate(expiry.getDate() + query.timeLimit)
+      linkhash = generateExpLink(query._id, target.uid, expiry)
+      linkstring = settings.confSite.rootUrl + 'exp/' + linkhash
       jade.renderFile('server/views/email-invite.jade',
-        {expname: query.name, rooturl: settings.confSite.rootUrl, uid: target._id},
+        {expname: query.name, link: linkstring},
         (errJade, htmlResult) ->
           if errJade
             handleError(errJade, res)
@@ -303,6 +344,8 @@ inviteOne = (req, res) ->
               else
                 console.log(resMail)
                 target.status = 'invited'
+                target.linkExpiry = expiry
+                target.link = linkhash
                 query.save((errSave) ->
                   if errSave
                     handleError(errSave, res)
@@ -314,11 +357,11 @@ inviteOne = (req, res) ->
   Promise-returning function to ensure that e-mails are sent and user statuses are modified
     synchronously in inviteAll
 ###
-promiseInvite = (expname, userid, email, index) ->
+promiseInvite = (expname, linkstring, email, index) ->
   deferred = Q.defer()
 
   jade.renderFile('server/views/email-invite.jade',
-    {expname: expname, rooturl: settings.confSite.rootUrl, uid: userid},
+    {expname: expname, link: linkstring},
     (errJade, htmlResult) ->
       if errJade
         deferred.resolve(false)
@@ -344,39 +387,49 @@ inviteAll = (req, res) ->
       '_id': mongoose.Types.ObjectId(req.body.eid),
       'users.status': 'uninvited'
     },
-  (errQuery, query) ->
-    if errQuery
-      console.error(errQuery)
-      res.send(500)
-    else if query is null
-      console.error('inviteAll: no uninvited users')
-      res.send(400)
-    else
-      promises = []
+    (errQuery, query) ->
+      if errQuery
+        console.error(errQuery)
+        res.send(500)
+      else if query is null
+        console.error('inviteAll: no uninvited users')
+        res.send(400)
+      else
+        promises = []
+        linkhashes = {}
+        expiry = new Date()
+        expiry.setDate(expiry.getDate() + query.timeLimit)
 
-      for u, i in query.users
-        if u.status is 'uninvited'
-          promises.push(promiseInvite(query.name, u._id, u.email, i))
+        for u, i in query.users
+          if u.status is 'uninvited'
+            linkhash = generateExpLink(query._id, u.uid, expiry)
+            linkstring = settings.confSite.rootUrl + 'exp/' + linkhash
+            promises.push(promiseInvite(query.name, linkstring, u.email, i))
+            #hopefully this will let us preserve link hashes and will be filled up synchronously
+            linkhashes[i] = linkhash
 
-      Q.all(promises)
-      .then(
-        (indices) ->
-          deferred = Q.defer()
-          for i in indices
-            if i != false
-              query.users[i].status = 'invited'
-          query.save((errSave) ->
-            if errSave
-              deferred.reject(500)
-            else
-              deferred.resolve(200)
-          )
-          return deferred.promise
-      )
-      .done(
-        ((result) -> res.send(result)),
-        ((result) -> res.send(result))
-      )
+        Q.all(promises)
+        .then(
+          (indices) ->
+            deferred = Q.defer()
+            for i in indices
+              if i != false
+                query.users[i].status = 'invited'
+                query.users[i].linkExpiry = expiry
+                query.users[i].link = linkhashes[i]
+
+            query.save((errSave) ->
+              if errSave
+                deferred.reject(500)
+              else
+                deferred.resolve(200)
+            )
+            return deferred.promise
+        )
+        .done(
+          ((result) -> res.send(result)),
+          ((result) -> res.send(result))
+        )
   )
 
 #User stuff
