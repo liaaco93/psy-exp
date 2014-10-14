@@ -9,6 +9,8 @@ exports.confMail =
 
 exports.confSite =
   rootUrl: "http://evening-fortress-9193.herokuapp.com/"
+  #rootUrl: "http://localhost:5000/"
   dbUrl: "mongodb://admin:admin@ds031087.mongolab.com:31087/heroku_app28365881"
+  #dbUrl: "mongodb://localhost/test"
   adminUser:
     "admin": "admin"

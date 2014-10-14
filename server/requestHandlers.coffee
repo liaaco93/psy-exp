@@ -111,18 +111,22 @@ showUserPage = (req, res) ->
             target = query.users[i]
             found = true
           i++
-        if (i is query.users.length)
+        if (target is undefined)
           console.error('showUserPage: something strange happened')
           res.send(500)
           return
-        jade.renderFile('server/views/user-submit.jade',
-          {uid: target.uid, status: target.status},
-          (errJade, htmlResult) ->
-            if errJade
-              handleError(errJade, res)
-            else
-              res.send(htmlResult)
-        )
+        else if (target.linkExpiry.getTime() < (new Date()).getTime())
+          console.error('showUserPage: link expired')
+          res.send(400, 'link expired')
+        else
+          jade.renderFile('server/views/user-submit.jade',
+            {uid: target.uid, status: target.status},
+            (errJade, htmlResult) ->
+              if errJade
+                handleError(errJade, res)
+              else
+                res.send(htmlResult)
+          )
   )
 
 ###
@@ -323,7 +327,7 @@ inviteOne = (req, res) ->
           target = query.users[i]
           found = true
         i++
-      if (i is query.users.length)
+      if (target is undefined)
         console.error('inviteOne: user already invited')
         res.send(400)
         return
@@ -349,6 +353,8 @@ inviteOne = (req, res) ->
                 query.save((errSave) ->
                   if errSave
                     handleError(errSave, res)
+                  else
+                    res.send(200)
                 )
             )
       )

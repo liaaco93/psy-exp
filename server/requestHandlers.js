@@ -141,21 +141,24 @@
           }
           i++;
         }
-        if (i === query.users.length) {
+        if (target === void 0) {
           console.error('showUserPage: something strange happened');
           res.send(500);
-          return;
+        } else if (target.linkExpiry.getTime() < (new Date()).getTime()) {
+          console.error('showUserPage: link expired');
+          return res.send(400, 'link expired');
+        } else {
+          return jade.renderFile('server/views/user-submit.jade', {
+            uid: target.uid,
+            status: target.status
+          }, function(errJade, htmlResult) {
+            if (errJade) {
+              return handleError(errJade, res);
+            } else {
+              return res.send(htmlResult);
+            }
+          });
         }
-        return jade.renderFile('server/views/user-submit.jade', {
-          uid: target.uid,
-          status: target.status
-        }, function(errJade, htmlResult) {
-          if (errJade) {
-            return handleError(errJade, res);
-          } else {
-            return res.send(htmlResult);
-          }
-        });
       }
     });
   };
@@ -405,7 +408,7 @@
           }
           i++;
         }
-        if (i === query.users.length) {
+        if (target === void 0) {
           console.error('inviteOne: user already invited');
           res.send(400);
           return;
@@ -433,6 +436,8 @@
                 return query.save(function(errSave) {
                   if (errSave) {
                     return handleError(errSave, res);
+                  } else {
+                    return res.send(200);
                   }
                 });
               }
