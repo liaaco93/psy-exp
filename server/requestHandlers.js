@@ -141,6 +141,7 @@
           }
           i++;
         }
+        console.log(target.linkExpiry);
         if (target === void 0) {
           console.error('showUserPage: something strange happened');
           res.send(500);
