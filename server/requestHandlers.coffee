@@ -342,10 +342,8 @@ inviteOne = (req, res) ->
           if errJade
             handleError(errJade, res)
           else
-            emailer.sendEmail(target.email, 'Invitation', htmlResult, (errMail, resMail) ->
-              if errMail
-                handleError(errMail, res)
-              else
+            emailer.sendEmail(target.email, 'Invitation', htmlResult,
+              (resMail) ->
                 console.log(resMail)
                 target.status = 'invited'
                 target.linkExpiry = expiry
@@ -356,6 +354,8 @@ inviteOne = (req, res) ->
                   else
                     res.send(200)
                 )
+              , (errMail) ->
+                handleError(errMail.message, res)
             )
       )
   )

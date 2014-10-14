@@ -425,22 +425,20 @@
           if (errJade) {
             return handleError(errJade, res);
           } else {
-            return emailer.sendEmail(target.email, 'Invitation', htmlResult, function(errMail, resMail) {
-              if (errMail) {
-                return handleError(errMail, res);
-              } else {
-                console.log(resMail);
-                target.status = 'invited';
-                target.linkExpiry = expiry;
-                target.link = linkhash;
-                return query.save(function(errSave) {
-                  if (errSave) {
-                    return handleError(errSave, res);
-                  } else {
-                    return res.send(200);
-                  }
-                });
-              }
+            return emailer.sendEmail(target.email, 'Invitation', htmlResult, function(resMail) {
+              console.log(resMail);
+              target.status = 'invited';
+              target.linkExpiry = expiry;
+              target.link = linkhash;
+              return query.save(function(errSave) {
+                if (errSave) {
+                  return handleError(errSave, res);
+                } else {
+                  return res.send(200);
+                }
+              });
+            }, function(errMail) {
+              return handleError(errMail.message, res);
             });
           }
         });
