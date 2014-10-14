@@ -278,8 +278,8 @@ addUser = (req, res) ->
               'uid': req.body.uid,
               'email': req.body.email,
               'status': 'uninvited',
-              'link': "",
-              'linkExpiry': ""
+              'link': "WHY",
+              'linkExpiry': Date(),
               'data': {}
             })
             expQuery.save((errSave, newUserDoc) ->

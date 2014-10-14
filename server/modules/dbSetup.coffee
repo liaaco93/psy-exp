@@ -42,7 +42,7 @@ UserSchema = mongoose.Schema({
 ###
 XUSchema = mongoose.Schema({
   uid: Number,
-  uobjid: mongoose.Schema.Types.ObjectId
+  uobjid: mongoose.Schema.Types.ObjectId,
   email: String,
   status: String,
   link: String,
