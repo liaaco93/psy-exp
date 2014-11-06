@@ -398,7 +398,7 @@
       var expiry, found, i, linkhash, linkstring, target;
       if (errQuery) {
         return handleError(errQuery, res);
-      } else if (query.length === 0) {
+      } else if (!query) {
         console.error('inviteOne: no such user or no uninvited users');
         return res.send(400);
       } else {

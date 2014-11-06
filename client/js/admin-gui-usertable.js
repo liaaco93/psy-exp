@@ -3,39 +3,38 @@
   var loadUsers;
 
   loadUsers = function() {
-    $.get("/admin/viewusers/" + ($('#userTable').attr("eid")), function(data, txtStatus, jqXHR) {
+    return $.get("/admin/viewusers/" + ($('#userTable').attr("eid")), function(data, txtStatus, jqXHR) {
       var user, _i, _len, _ref;
       $('#userData').children().detach();
       console.log(data);
       _ref = data.users;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         user = _ref[_i];
-        $('#userData').append('<tr> <td>' + user.uid + '</td> <td>' + user.email + '</td> <td class="ui left pointing dropdown">' + user.status + '<div class="menu"><div class="item">asdf</div></div></td> </tr>');
+        $('#userData').append('<tr> <td>' + user.uid + '</td> <td>' + user.email + '</td> <td class="ui left pointing dropdown">' + user.status + '<div class="menu"> <div class="item userInvite" data-user=' + user.uid + '>Invite</div> </div> </td> </tr>');
       }
-      return $('.ui.dropdown').dropdown();
+      $('.ui.dropdown').dropdown();
+      return $('.userInvite').click(function() {
+        console.log(this);
+        $.post('/admin/invite', {
+          uid: $(this).attr('data-user'),
+          eid: $('#userTable').attr("eid")
+        }).done(function() {
+          $('#resultInvOne').html("OK");
+          return loadUsers();
+        }).fail(function(data) {
+          if (data.status === 400) {
+            return $('#resultInvOne').html("UID does not exist or was already invited");
+          } else if (data.status === 500) {
+            return $('#resultInvOne').html("Something went wrong");
+          }
+        });
+        return false;
+      });
     });
-    return console.log("boop");
   };
 
   $(function() {
     return loadUsers();
-  });
-
-  $('#invOne').submit(function() {
-    $.post('/admin/invite', {
-      uid: this.uid.value,
-      eid: $('#userTable').attr("eid")
-    }).done(function() {
-      $('#resultInvOne').html("OK");
-      return loadUsers();
-    }).fail(function(data) {
-      if (data.status === 400) {
-        return $('#resultInvOne').html("UID does not exist or was already invited");
-      } else if (data.status === 500) {
-        return $('#resultInvOne').html("Something went wrong");
-      }
-    });
-    return false;
   });
 
   $('#invAll').submit(function() {

@@ -323,7 +323,7 @@ inviteOne = (req, res) ->
   xutable.exec((errQuery, query) ->
     if errQuery
       handleError(errQuery, res)
-    else if query.length is 0
+    else if not query
       console.error('inviteOne: no such user or no uninvited users')
       res.send(400)
     else

@@ -7,35 +7,38 @@ loadUsers = () ->
         '<tr>
           <td>'+user.uid+'</td>
           <td>'+user.email+'</td>
-          <td class="ui left pointing dropdown">'+user.status+'<div class="menu"><div class="item">asdf</div></div></td>
+          <td class="ui left pointing dropdown">'+user.status+
+            '<div class="menu">
+              <div class="item userInvite" data-user='+user.uid+'>Invite</div>
+            </div>
+          </td>
         </tr>'
       )
     $('.ui.dropdown').dropdown()
+    $('.userInvite').click(() ->
+      console.log(this)
+      $.post('/admin/invite',
+        {
+          uid: $(this).attr('data-user')
+          eid: $('#userTable').attr("eid")
+        }
+      )
+      .done(()->
+        $('#resultInvOne').html("OK")
+        loadUsers()
+      )
+      .fail((data) ->
+        if data.status is 400
+          $('#resultInvOne').html("UID does not exist or was already invited")
+        else if data.status is 500
+          $('#resultInvOne').html("Something went wrong")
+      )
+      false
+    )
   )
-  console.log("boop")
 
 $(() ->
   loadUsers()
-)
-
-$('#invOne').submit(() ->
-  $.post('/admin/invite',
-    {
-      uid: this.uid.value
-      eid: $('#userTable').attr("eid")
-    }
-  )
-  .done(()->
-    $('#resultInvOne').html("OK")
-    loadUsers()
-  )
-  .fail((data) ->
-    if data.status is 400
-      $('#resultInvOne').html("UID does not exist or was already invited")
-    else if data.status is 500
-      $('#resultInvOne').html("Something went wrong")
-  )
-  false
 )
 
 $('#invAll').submit(() ->
