@@ -141,6 +141,7 @@
           }
           i++;
         }
+        console.log("ASDFASDFASDF");
         console.log(target);
         if (target === void 0 || target.linkExpiry === void 0) {
           console.error('showUserPage: something strange happened');
