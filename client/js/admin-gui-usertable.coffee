@@ -4,10 +4,10 @@ loadUsers = () ->
     console.log(data)
     for user in data.users
       $('#userData').append(
-        '<tr>\
-          <td>'+user.uid+'</td>\
-          <td>'+user.email+'</td>\
-          <td class="ui left pointing dropdown">'+user.status+'<div class="menu"><div class="item">asdf</div></div></td>\
+        '<tr>
+          <td>'+user.uid+'</td>
+          <td>'+user.email+'</td>
+          <td class="ui left pointing dropdown">'+user.status+'<div class="menu"><div class="item">asdf</div></div></td>
         </tr>'
       )
     $('.ui.dropdown').dropdown()
