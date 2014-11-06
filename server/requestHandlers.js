@@ -132,6 +132,7 @@
         console.error('showUserPage: hash not found');
         return res.send(404);
       } else {
+        console.log(query.users);
         i = 0;
         found = false;
         while ((i < query.users.length) && (!found)) {
@@ -141,7 +142,6 @@
           }
           i++;
         }
-        console.error(target.linkExpiry);
         if (target === void 0 || target.linkExpiry === void 0) {
           console.error('showUserPage: something strange happened');
           res.send(500);
