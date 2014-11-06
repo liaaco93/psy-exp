@@ -132,11 +132,10 @@
         console.error('showUserPage: hash not found');
         return res.send(404);
       } else {
-        console.log(query.users);
         i = 0;
         found = false;
         while ((i < query.users.length) && (!found)) {
-          if (query.users[i].link = req.params.hashstring) {
+          if (query.users[i].link === req.params.hashstring) {
             target = query.users[i];
             found = true;
           }
