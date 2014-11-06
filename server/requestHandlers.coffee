@@ -104,8 +104,6 @@ showUserPage = (req, res) ->
         console.error('showUserPage: hash not found')
         res.send(404)
       else
-        console.log("POTATA")
-        console.log(query)
         i = 0
         found = false
         while (i < query.users.length) and (not found)
@@ -113,6 +111,7 @@ showUserPage = (req, res) ->
             target = query.users[i]
             found = true
           i++
+        console.error(target.linkExpiry)
         if (target is undefined or target.linkExpiry is undefined)
           console.error('showUserPage: something strange happened')
           res.send(500)
