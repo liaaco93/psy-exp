@@ -111,7 +111,7 @@ showUserPage = (req, res) ->
             target = query.users[i]
             found = true
           i++
-        if (target is undefined)
+        if (target is undefined or target.linkExpiry is undefined)
           console.error('showUserPage: something strange happened')
           res.send(500)
           return

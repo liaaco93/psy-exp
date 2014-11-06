@@ -141,10 +141,10 @@
           }
           i++;
         }
-        if (target === void 0) {
+        if (target === void 0 || target.linkExpiry === void 0) {
           console.error('showUserPage: something strange happened');
           res.send(500);
-        } else if (Date(target.linkExpiry).getTime() < (new Date()).getTime()) {
+        } else if ((new Date(target.linkExpiry)).getTime() < (new Date()).getTime()) {
           console.error('showUserPage: link expired');
           return res.send(400, 'link expired');
         } else {

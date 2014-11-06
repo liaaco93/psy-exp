@@ -10,7 +10,7 @@
       _ref = data.users;
       for (_i = 0, _len = _ref.length; _i < _len; _i++) {
         user = _ref[_i];
-        $('#userData').append('<tr><td>' + user.uid + '</td><td>' + user.email + '</td><td class="ui left pointing dropdown">' + user.status + '<div class="menu"><div class="item">asdf</div></div></td></tr>');
+        $('#userData').append('<tr> <td>' + user.uid + '</td> <td>' + user.email + '</td> <td class="ui left pointing dropdown">' + user.status + '<div class="menu"><div class="item">asdf</div></div></td> </tr>');
       }
       return $('.ui.dropdown').dropdown();
     });
