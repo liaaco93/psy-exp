@@ -111,12 +111,11 @@ showUserPage = (req, res) ->
             target = query.users[i]
             found = true
           i++
-        console.log(target.linkExpiry)
         if (target is undefined)
           console.error('showUserPage: something strange happened')
           res.send(500)
           return
-        else if (target.linkExpiry.getTime() < (new Date()).getTime())
+        else if (Date(target.linkExpiry).getTime() < (new Date()).getTime())
           console.error('showUserPage: link expired')
           res.send(400, 'link expired')
         else

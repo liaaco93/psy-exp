@@ -46,7 +46,7 @@ XUSchema = mongoose.Schema({
   email: String,
   status: String,
   link: String,
-  linkExpiry: Date,
+  linkExpiry: String,
   data: mongoose.Schema.Types.Mixed
 })
 
